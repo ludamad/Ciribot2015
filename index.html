@@ -1,7 +1,7 @@
 <!DOCTYPE HTML>
 <html>
 	<head>
-		<title>melonJS Template - Step 9 (final)</title>
+		<title>Ciribot 3015</title>
 		<link rel="stylesheet" type="text/css" media="screen" href="index.css">
 		<meta id="viewport" name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 		<meta name="apple-mobile-web-app-capable" content="yes">
@@ -12,10 +12,13 @@
         <link rel="apple-touch-icon" sizes="120x120" href="icons/touch-icon-iphone-retina-120x120.png">
         <link rel="apple-touch-icon" sizes="152x152" href="icons/touch-icon-ipad-retina-152x152.png">
 	</head>
+
 	<body>
 		<!-- Canvas placeholder -->
 		<div id="screen"></div>
 
+		<!-- Coffeescript -->
+                <script src="http://coffeescript.org/extras/coffee-script.js"></script>
 		<!-- melonJS Library -->
 		<!-- build:js src/app.min.js -->
 		<script type="text/javascript" src="lib/melonJS-2.0.2.js"></script>
@@ -24,40 +27,34 @@
 		<script type="text/javascript" src="lib/plugins/debugPanel.js"></script>
 		
 		<!-- Game Scripts -->
-		<script type="text/javascript" src="src/game.js"></script>
-		<script type="text/javascript" src="src/resources.js"></script>
 
-		<script type="text/javascript" src="src/entities/HUD.js"></script>
-		<script type="text/javascript" src="src/entities/entities.js"></script>
+		<script type="text/coffeescript" src="src/game.coffee"></script>
+		<script type="text/coffeescript" src="src/resources.coffee"></script>
+		<script type="text/coffeescript" src="src/HUD.coffee"></script>
+		<script type="text/coffeescript" src="src/entities.coffee"></script>
+                <!--<script type="text/coffeescript" src="src/resources.coffee"></script>-->
+		<script type="text/coffeescript" src="src/title.coffee"></script>
+		<script type="text/coffeescript" src="src/play.coffee"></script>
+		<script type="text/coffeescript">
+                    onReady () ->
+                        game.onload()
 
-		<script type="text/javascript" src="src/screens/title.js"></script>
-		<script type="text/javascript" src="src/screens/play.js"></script>
-		<!-- /build -->
-		<!-- Bootstrap & Mobile optimization tricks -->
-		<script type="text/javascript">
-			window.onReady(function onReady() {
-				game.onload();
+                        # Mobile browser hacks
+                        if me.device.isMobile and !navigator.isCocoonJS
+                            touchMove = (e) -> 
+                                e.preventDefault()
+                                window.scroll 0, 0
+                                return false
+                            scrollAway = () ->
+                                window.scrollTo 0, 1
+                                me.video.onresize null
+                            scrollOnResize = (e) ->
+                                window.scrollTo 0, 1
 
-				// Mobile browser hacks
-				if (me.device.isMobile && !navigator.isCocoonJS) {
-					// Prevent the webview from moving on a swipe
-					window.document.addEventListener("touchmove", function (e) {
-						e.preventDefault();
-						window.scroll(0, 0);
-						return false;
-					}, false);
-
-					// Scroll away mobile GUI
-					(function () {
-						window.scrollTo(0, 1);
-						me.video.onresize(null);
-					}).defer();
-
-					me.event.subscribe(me.event.WINDOW_ONRESIZE, function (e) {
-						window.scrollTo(0, 1);
-					});
-				}
-			});
-		</script>
+                            scrollAway.defer()
+                            # Prevent the webview from moving on a swipe
+                            window.document.addEventListener('touchmove', touchMove, false)
+                            me.event.subscribe(me.event.WINDOW_ONRESIZE, scrollOnResize)
+                </script>
 	</body>
 </html>
