@@ -27,16 +27,15 @@ game.PlayerBlock = me.Entity.extend {
         settings = {
             width: 32, height: 32
             spritewidth: 32, spriteheight: 32
+            image: 'ciriblock'
         }
         @_super(me.Entity, 'init', [x, y, settings])
         @body.collisionType = me.collision.types.WORLD_SHAPE
-        #@body.addShape(new me.Rect(x, y, settings.width, settings.height))
+        @body.addShape(new me.Rect(0, 0, settings.width, settings.height))
         @alwaysUpdate = true
-        @renderable = new me.Sprite(0, 0, me.loader.getImage('ciriblock'))
         @collided = false
         @body.setVelocity(0,0)
     update: (dt) ->
-        console.log "Istnieje"
     onCollision: (response, other) ->
         switch response.b.body.collisionType
             when me.collision.types.WORLD_SHAPE
@@ -81,8 +80,9 @@ game.PlayerEntity = me.Entity.extend {
     update: (dt) ->
         if me.input.isKeyPressed('block')
             {x, y} = @getBounds().pos
-            if not wouldCollide(@, 32, 0)
-                block = new game.PlayerBlock(x + 32, y)
+            mod = if @renderable.lastflipX then -32 else 32
+            if not wouldCollide(@, mod, 0)
+                block = new game.PlayerBlock(x + mod, y)
                 me.game.world.addChild(block)
         if me.input.isKeyPressed('left')
             # flip the sprite on horizontal axis
