@@ -34,6 +34,8 @@ window.game = {
         me.input.bindKey(me.input.KEY.D, 'right')
         me.input.bindKey(me.input.KEY.UP, 'jump', true)
         me.input.bindKey(me.input.KEY.W, 'jump', true)
+        me.input.bindKey(me.input.KEY.CTRL, 'block', true)
+        me.input.bindKey(me.input.KEY.SPACE, 'block', true)
         # Start the game.
         me.state.change(me.state.MENU)
 }
