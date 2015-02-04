@@ -37,6 +37,7 @@ defineImages [
     'area01_bkg1'
     'area01_level_tiles'
     'mario_tiles'
+    'monsters'
 ]
 defineLevels [
     'area01'
