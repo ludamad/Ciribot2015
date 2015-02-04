@@ -5,7 +5,7 @@ window.game = {
     }
     onload: () ->
         # Initialize the video.
-        if !me.video.init('screen', me.video.CANVAS, 640, 480, true, 'auto')
+        if !me.video.init('screen', me.video.CANVAS, 800, 600, true, 'auto')
             alert 'Your browser does not support HTML5 canvas.'
         # add "#debug" to the URL to enable the debug Panel
         if document.location.hash == '#debug'
@@ -29,7 +29,10 @@ window.game = {
         # enable the keyboard
         me.input.bindKey(me.input.KEY.LEFT, 'left')
         me.input.bindKey(me.input.KEY.RIGHT, 'right')
-        me.input.bindKey(me.input.KEY.X, 'jump', true)
+        me.input.bindKey('a', 'left')
+        me.input.bindKey('d', 'right')
+        me.input.bindKey(me.input.KEY.UP, 'jump', true)
+        me.input.bindKey('w', 'jump', true)
         # Start the game.
         me.state.change(me.state.MENU)
 }
