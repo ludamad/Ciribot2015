@@ -1,12 +1,5 @@
-melonJS boilerplate
--------------------------------------------------------------------------------
+Ciribot2015
 
-features :
-- video autoscaling
-- mobile optimized HTML/CSS
-- swiping disabled on iOS devices
-- debug Panel (if #debug)
-
--------------------------------------------------------------------------------
-Copyright (C) 2011 - 2013, Olivier Biot, Jason Oster
-melonJS is licensed under the [MIT License](http://www.opensource.org/licenses/mit-license.php)
+No description yet, feel free to try it http://ludamad.github.io/Ciribot2015/
+Controls: WASD or arrow keys (up jumps)
+Make blocks with 'ctrl'
