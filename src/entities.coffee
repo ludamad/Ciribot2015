@@ -4,7 +4,8 @@
 
 game.PlayerEntity = me.Entity.extend {
     init: (x, y, settings) ->
-        # call the constructor
+        settings.spritewidth = settings.width = 33
+        settings.spriteheight = settings.height = 43
         @_super(me.Entity, 'init', [x, y, settings])
         # set the default horizontal & vertical speed (accel vector)
         @body.setVelocity(3, 15)
@@ -112,7 +113,7 @@ game.EnemyEntity = me.Entity.extend {
         # adjust the size setting information to match the sprite size
         # so that the entity object is created with the right size
         settings.spritewidth = settings.width = 32
-        settings.spritewidth = settings.height = 32
+        settings.spriteheight = settings.height = 32
         # call the parent constructor
         @_super(me.Entity, 'init', [x, y, settings])
         # set start/end position based on the initial area size
@@ -126,7 +127,7 @@ game.EnemyEntity = me.Entity.extend {
         @walkLeft = false
         # walking & jumping speed
         @body.setVelocity 4, 6
-        @renderable.addAnimation('stand', [0])
+        @renderable.addAnimation('stand', [1])
         @renderable.setCurrentAnimation('stand')
     update: (dt) ->
         if @alive

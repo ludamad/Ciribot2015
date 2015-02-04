@@ -9,8 +9,8 @@ window.game = {
             alert 'Your browser does not support HTML5 canvas.'
         # add "#debug" to the URL to enable the debug Panel
         if document.location.hash == '#debug'
-            window.onReady ->
-                me.plugin.register.defer this, me.debug.Panel, 'debug', me.input.KEY.V
+            window.onReady () ->
+                me.plugin.register.defer(this, me.debug.Panel, 'debug', me.input.KEY.V)
         # Initialize the audio.
         me.audio.init('mp3,ogg')
         # Set a callback to run when loading is complete.

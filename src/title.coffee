@@ -11,12 +11,9 @@ game.TitleScreen = me.ScreenObject.extend(
                 # this will unlock audio on mobile devices
                 me.audio.play 'cling'
                 me.state.change me.state.PLAY
-            return
         )
-        return
     onDestroyEvent: ->
         me.input.unbindKey me.input.KEY.ENTER
         me.input.unbindPointer me.input.mouse.LEFT
         me.event.unsubscribe @handler
-        return
 )
