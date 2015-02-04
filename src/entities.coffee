@@ -2,15 +2,22 @@
 # Player Entity
 ###
 
+MAX_SPEED = 6
+MIN_SPEED = 4
+SPEED_INCR = 0.1
+MIN_JUMP = 12
+MAX_JUMP = 14
+
 game.PlayerEntity = me.Entity.extend {
     init: (x, y, settings) ->
         settings.spritewidth = settings.width = 33
         settings.spriteheight = settings.height = 43
         @_super(me.Entity, 'init', [x, y, settings])
         # set the default horizontal & vertical speed (accel vector)
-        @body.setVelocity(3, 15)
+        @body.setVelocity(MAX_SPEED, MAX_JUMP)
         # set the display to follow our position on both axis
         me.game.viewport.follow(@pos, me.game.viewport.AXIS.BOTH)
+        me.game.viewport.setDeadzone(0, 100)
         # ensure the player is updated even when outside of the viewport
         @alwaysUpdate = true
         @renderable.addAnimation('walk', [0])
@@ -19,17 +26,17 @@ game.PlayerEntity = me.Entity.extend {
     update: (dt) ->
         if me.input.isKeyPressed('left')
             # flip the sprite on horizontal axis
-            @renderable.flipX true
+            @renderable.flipX(true)
             # update the entity velocity
-            @body.vel.x -= @body.accel.x * me.timer.tick
+            @body.vel.x = Math.min(@body.vel.x - SPEED_INCR, -MIN_SPEED)
             # change to the walking animation
             if !@renderable.isCurrentAnimation('walk')
-                @renderable.setCurrentAnimation 'walk'
+                @renderable.setCurrentAnimation('walk')
         else if me.input.isKeyPressed('right')
             # unflip the sprite
-            @renderable.flipX false
+            @renderable.flipX(false)
             # update the entity velocity
-            @body.vel.x += @body.accel.x * me.timer.tick
+            @body.vel.x = Math.max(@body.vel.x + SPEED_INCR, MIN_SPEED)
             # change to the walking animation
             if !@renderable.isCurrentAnimation('walk')
                 @renderable.setCurrentAnimation('walk')
@@ -37,11 +44,13 @@ game.PlayerEntity = me.Entity.extend {
             @body.vel.x = 0
             # change to the standing animation
             @renderable.setCurrentAnimation 'stand'
+
+        charge_percent = Math.max(Math.abs(@body.vel.x) - MIN_SPEED, 0) / (MAX_SPEED - MIN_SPEED)
         if me.input.isKeyPressed('jump')
             if !@body.jumping and !@body.falling
                 # set current vel to the maximum defined value
                 # gravity will then do the rest
-                @body.vel.y = -@body.maxVel.y * me.timer.tick
+                @body.vel.y = -(MIN_JUMP + (MAX_JUMP - MIN_JUMP) * charge_percent)
                 # set the jumping flag
                 @body.jumping = true
                 # play some audio 
@@ -63,7 +72,7 @@ game.PlayerEntity = me.Entity.extend {
                 if response.overlapV.y > 0 and !@body.jumping
                     # bounce (force jump)
                     @body.falling = false
-                    @body.vel.y = -@body.maxVel.y * me.timer.tick
+                    @body.vel.y = -@body.maxVel.y
                     # set the jumping flag
                     @body.jumping = true
                     # play some audio
@@ -136,7 +145,7 @@ game.EnemyEntity = me.Entity.extend {
             else if !@walkLeft and @pos.x >= @endX
                 @walkLeft = true
             @renderable.flipX @walkLeft
-            @body.vel.x += if @walkLeft then -@body.accel.x * me.timer.tick else @body.accel.x * me.timer.tick
+            @body.vel.x += if @walkLeft then -@body.accel.x else @body.accel.x
         else
             @body.vel.x = 0
         # check & update movement
