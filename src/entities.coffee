@@ -7,6 +7,7 @@ MIN_SPEED = 4
 SPEED_INCR = 1/8
 MIN_JUMP = 12
 MAX_JUMP = 14
+BLOCK_FRAMES_TO_LIVE = 200
 
 jumpReleased = false
 
@@ -34,28 +35,42 @@ game.PlayerBlock = me.Entity.extend {
         @body.addShape(new me.Rect(0, 0, settings.width, settings.height))
         @alwaysUpdate = true
         @collided = false
-        @body.setVelocity(0,0)
+        @framesToLive = BLOCK_FRAMES_TO_LIVE
+        @body.setMaxVelocity(0,0)
     update: (dt) ->
+        if @framesToLive-- < 0
+            me.game.world.removeChild(@)
+        {x, y} = @pos
+        rX = 32*Math.round(x/32) 
+        rY = 32*Math.round(y/32)
+        if rX == x and rY == y
+            return
+        if not wouldCollide(@, rX-x, rY-y)
+            @pos.x = rX; @pos.y = rY
+            @updateBounds()
+
     onCollision: (response, other) ->
-        switch response.b.body.collisionType
-            when me.collision.types.WORLD_SHAPE
-                @collided = true
-                return true
+        @collided = true
+        return false
+        # switch response.b.body.collisionType
+        #     when me.collision.types.WORLD_SHAPE
+        #         @collided = true
+        # return false
 }
 
 game.PlayerEntity = me.Entity.extend {
     init: (x, y, settings) ->
-        settings.spritewidth = settings.width = 33
-        settings.spriteheight = settings.height = 43
+        settings.spritewidth = 33 ; settings.spriteheight = 43
+        settings.width = 32       ; settings.height = 32
         @collided = false
         @_super(me.Entity, 'init', [x, y, settings])
-        # set the default horizontal & vertical speed (accel vector)
-        @body.setVelocity(MAX_SPEED, MAX_JUMP)
+        @body.setMaxVelocity(MAX_SPEED, MAX_JUMP)
         # set the display to follow our position on both axis
         me.game.viewport.follow(@pos, me.game.viewport.AXIS.BOTH)
         me.game.viewport.setDeadzone(0, 100)
         # ensure the player is updated even when outside of the viewport
         @alwaysUpdate = true
+        @renderable.translate(0,-6)
         @renderable.addAnimation('walk', [0])
         @renderable.addAnimation('stand', [0])
         @renderable.setCurrentAnimation('stand')
@@ -104,6 +119,8 @@ game.PlayerEntity = me.Entity.extend {
             @body.vel.x = 0
             # change to the standing animation
             @renderable.setCurrentAnimation 'stand'
+        if me.input.isKeyPressed('down')
+            @body.vel.x = 0
 
         # holdingJump = me.input.isKeyPressed('jump')
         # # Jump on every 'edge'
