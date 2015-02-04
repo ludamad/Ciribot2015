@@ -32,6 +32,8 @@ window.game = {
         me.input.bindKey(me.input.KEY.RIGHT, 'right')
         me.input.bindKey(me.input.KEY.A, 'left')
         me.input.bindKey(me.input.KEY.D, 'right')
+        me.input.bindKey(me.input.KEY.DOWN, 'down')
+        me.input.bindKey(me.input.KEY.S, 'down')
         me.input.bindKey(me.input.KEY.UP, 'jump', true)
         me.input.bindKey(me.input.KEY.W, 'jump', true)
         me.input.bindKey(me.input.KEY.CTRL, 'block', true)
