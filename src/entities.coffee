@@ -4,14 +4,29 @@
 
 MAX_SPEED = 6
 MIN_SPEED = 4
-SPEED_INCR = 0.1
+SPEED_INCR = 1/8
 MIN_JUMP = 12
 MAX_JUMP = 14
+
+jumpReleased = false
+
+me.event.subscribe me.event.KEYUP, (action, keyCode) ->
+    if keyCode == me.input.KEY.W or keyCode == me.input.KEY.UP
+        jumpReleased = true
+
+wouldCollide = (obj, dx, dy) ->
+    B = obj.getBounds()
+    B.pos.x += dx; B.pos.y += dy
+    obj.collided = false
+    me.collision.check(obj)
+    B.pos.x -= dx; B.pos.y -= dy
+    return obj.collided
 
 game.PlayerEntity = me.Entity.extend {
     init: (x, y, settings) ->
         settings.spritewidth = settings.width = 33
         settings.spriteheight = settings.height = 43
+        @collided = false
         @_super(me.Entity, 'init', [x, y, settings])
         # set the default horizontal & vertical speed (accel vector)
         @body.setVelocity(MAX_SPEED, MAX_JUMP)
@@ -23,6 +38,25 @@ game.PlayerEntity = me.Entity.extend {
         @renderable.addAnimation('walk', [0])
         @renderable.addAnimation('stand', [0])
         @renderable.setCurrentAnimation('stand')
+        @renderable.draw = (renderer) ->
+
+    _doStep: (dt) ->
+        @body.update(dt)
+    draw : (renderer) ->
+        _bounds = @getBounds()
+        x = Math.round(0.5 + _bounds.pos.x + @anchorPoint.x * (_bounds.width - @renderable.width))
+        y = Math.round(0.5 + _bounds.pos.y + @anchorPoint.y * (_bounds.height - @renderable.height))
+        renderer.translate(x, y)
+        @renderable.draw(renderer)
+        renderer.translate(-x, -y)
+    jump: () ->
+        if wouldCollide(@, 0, Math.max(4, @body.vel.y))
+            charge_percent = Math.max(Math.abs(@body.vel.x) - MIN_SPEED, 0) / (MAX_SPEED - MIN_SPEED)
+            # set current vel to the maximum defined value
+            # gravity will then do the rest
+            @body.vel.y = -(MIN_JUMP + (MAX_JUMP - MIN_JUMP) * charge_percent)
+            # set the jumping flag
+            @body.jumping = true
     update: (dt) ->
         if me.input.isKeyPressed('left')
             # flip the sprite on horizontal axis
@@ -45,29 +79,23 @@ game.PlayerEntity = me.Entity.extend {
             # change to the standing animation
             @renderable.setCurrentAnimation 'stand'
 
-        charge_percent = Math.max(Math.abs(@body.vel.x) - MIN_SPEED, 0) / (MAX_SPEED - MIN_SPEED)
-        if me.input.isKeyPressed('jump')
-            if !@body.jumping and !@body.falling
-                # set current vel to the maximum defined value
-                # gravity will then do the rest
-                @body.vel.y = -(MIN_JUMP + (MAX_JUMP - MIN_JUMP) * charge_percent)
-                # set the jumping flag
-                @body.jumping = true
-                # play some audio 
-                me.audio.play 'jump'
+        # holdingJump = me.input.isKeyPressed('jump')
+        # # Jump on every 'edge'
+        if jumpReleased or me.input.isKeyPressed('jump') #holding_jump != holdingJump
+            @jump()
+        jumpReleased = false
+        # holding_jump = holdingJump
         # apply physics to the body (this moves the entity)
-        @body.update(dt)
+        @_doStep(dt)
         # handle collisions against other shapes
-        me.collision.check(this)
+        me.collision.check(@)
         # return true if we moved or if the renderable was updated
         @_super(me.Entity, 'update', [ dt ]) or @body.vel.x != 0 or @body.vel.y != 0
     onCollision: (response, other) ->
         switch response.b.body.collisionType
             when me.collision.types.WORLD_SHAPE
-                # Simulate a platform object
-                if other.type == 'platform'
-                    # Repond to the platform (it is solid)
-                    return true
+                @collided = true
+                return true
             when me.collision.types.ENEMY_OBJECT
                 if response.overlapV.y > 0 and !@body.jumping
                     # bounce (force jump)
@@ -77,15 +105,12 @@ game.PlayerEntity = me.Entity.extend {
                     @body.jumping = true
                     # play some audio
                     me.audio.play 'stomp'
-                else
-                    # let's flicker in case we touched an enemy
-                    @renderable.flicker 750
                 return false
             else
                 # Do not respond to other objects (e.g. coins)
                 return false
         # Make the object solid
-        true
+        return true
 }
 
 ###*
@@ -158,8 +183,8 @@ game.EnemyEntity = me.Entity.extend {
         if response.b.body.collisionType != me.collision.types.WORLD_SHAPE
             # res.y >0 means touched by something on the bottom
             # which mean at top position for this one
-            if @alive and response.overlapV.y > 0 and response.a.body.falling
-                @renderable.flicker 750
+            # if @alive and response.overlapV.y > 0 and response.a.body.falling
+            #     @renderable.flicker 750
             return false
         # Make all other objects solid
         return true

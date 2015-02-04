@@ -5,7 +5,8 @@ window.game = {
     }
     onload: () ->
         # Initialize the video.
-        if !me.video.init('screen', me.video.CANVAS, 400, 300, true, 2)
+        me.sys.fps = 30;
+        if !me.video.init('screen', me.video.CANVAS, 640, 360, true, 2)
             alert 'Your browser does not support HTML5 canvas.'
         # add "#debug" to the URL to enable the debug Panel
         if document.location.hash == '#debug'
