@@ -28,7 +28,7 @@ defineSounds = (names) ->
         i++
 
 defineImages [
-    'gripe_run_right'
+    'ciribot'
     'spinning_coin_gold'
     'wheelie_right'
     '32x32_font'
@@ -41,10 +41,9 @@ defineImages [
 ]
 defineLevels [
     'area01'
-    'area02'
 ]
 defineSounds [
-    'dst-inertexponent'
+    'ciribot_theme'
     'cling'
     'stomp'
     'jump'
