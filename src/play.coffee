@@ -1,7 +1,7 @@
 game.PlayScreen = me.ScreenObject.extend {
     onResetEvent: ->
         # play the audio track
-        #me.audio.playTrack 'ciribot_theme'
+        me.audio.playTrack 'ciribot_theme'
         # load a level
         me.levelDirector.loadLevel 'area01'
         # reset the score
