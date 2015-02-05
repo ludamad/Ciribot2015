@@ -9,6 +9,9 @@ MIN_JUMP = 11
 MAX_JUMP = 14
 BLOCK_FRAMES_TO_LIVE = 800
 
+T = me.collision.types
+solidMask = T.WORLD_SHAPE | T.PLAYER_OBJECT | T.ENEMY_OBJECT
+
 jumpReleased = false
 
 me.event.subscribe me.event.KEYUP, (action, keyCode) ->
@@ -104,7 +107,42 @@ game.PlayerBlock = me.Entity.extend {
         return false
 }
 
-game.PlayerEntity = me.Entity.extend {
+game.ActorBase = me.Entity.extend {
+    draw : (renderer) ->
+        [x, y] = [@getRx(), @getRy()]
+        renderer.translate(x, y)
+        @renderable.draw(renderer)
+        renderer.translate(-x, -y)
+    baseInit: () ->
+        @onPlatform = null
+    getRx: () ->
+        {pos, width} = @getBounds()
+        return Math.round(0.5 + pos.x + @anchorPoint.x * (width - @renderable.width))
+
+    getRy: () ->
+        {pos, height} = @getBounds()
+        return Math.round(0.5 + pos.y + @anchorPoint.y * (height - @renderable.height))
+
+    baseUpdate: (dt) ->
+        # apply physics to the body (this moves the entity)
+        if @onPlatform?
+            b = @onPlatform.getBounds()
+            b.pos.y -= 2
+            if not @getBounds().overlaps(@onPlatform.getBounds())
+                @onPlatform = null
+            b.pos.y += 2
+        if @onPlatform?
+            @body.vel.x += @onPlatform.body.vel.x
+        @body.update(dt)
+        if @onPlatform?
+            @body.vel.x -= @onPlatform.body.vel.x
+        # handle collisions against other shapes
+        me.collision.check(@)
+        # return true if we moved or if the renderable was updated
+        return @_super(me.Entity, 'update', [ dt ]) or @body.vel.x != 0 or @body.vel.y != 0
+}
+
+game.PlayerEntity = game.ActorBase.extend {
     init: (x, y, settings) ->
         settings.spritewidth = 33 ; settings.spriteheight = 43
         settings.width = 30       ; settings.height = 30
@@ -124,24 +162,10 @@ game.PlayerEntity = me.Entity.extend {
         @renderable.addAnimation('stand', [0])
         @renderable.setCurrentAnimation('stand')
         @firstUpdate = true
+        @baseInit()
 
-    _doStep: (dt) ->
-        @body.update(dt)
-
-    getRx: () ->
-        {pos, width} = @getBounds()
-        return Math.round(0.5 + pos.x + @anchorPoint.x * (width - @renderable.width))
-
-    getRy: () ->
-        {pos, height} = @getBounds()
-        return Math.round(0.5 + pos.y + @anchorPoint.y * (height - @renderable.height))
-
-    draw : (renderer) ->
-        [x, y] = [@getRx(), @getRy()]
-        renderer.translate(x, y)
-        @renderable.draw(renderer)
-        renderer.translate(-x, -y)
     hasFloorBelow: () -> wouldCollide(@, 0, Math.max(1, @body.vel.y), me.collision.types.WORLD_SHAPE)
+
     jump: () ->
         if @hasFloorBelow()
             charge_percent = Math.max(Math.abs(@body.vel.x) - MIN_SPEED, 0) / (MAX_SPEED - MIN_SPEED)
@@ -204,13 +228,12 @@ game.PlayerEntity = me.Entity.extend {
             @jump()
         jumpReleased = false
         # holding_jump = holdingJump
-        # apply physics to the body (this moves the entity)
-        @_doStep(dt)
-        # handle collisions against other shapes
-        me.collision.check(@)
-        # return true if we moved or if the renderable was updated
-        @_super(me.Entity, 'update', [ dt ]) or @body.vel.x != 0 or @body.vel.y != 0
+        @baseUpdate(dt)
+
     onCollision: (response, other) ->
+        if other instanceof game.MovingPlatform
+            if response.overlapV.y > 0 and !@body.jumping
+                @onPlatform = other
         if other instanceof game.SpringEntity
             if response.overlapV.y > 0 and !@body.jumping
                 @body.falling = false
@@ -263,6 +286,37 @@ game.Coin = me.CollectableEntity.extend {
         me.game.world.removeChild(this)
         return false
 }
+game.MovingPlatform = me.Entity.extend {
+    init: (x, y, settings) ->
+        settings.width = 85
+        settings.height = 23
+        settings.spritewidth = 101
+        settings.spriteheight = 39
+        settings.image = 'movingplatform'
+        @_super(me.Entity, 'init', [x, y, settings])
+        @alwaysUpdate = true
+        @speed = settings.speed or 4
+        @body.collisionType = me.collision.types.WORLD_SHAPE
+        @body.shapes = []
+        @body.addShape(new me.Rect(0, 0, settings.width, settings.height))
+        @body.setMaxVelocity(@speed,0)
+        @goLeft = (settings.facing == "left")
+    update: (dt) ->
+        if @body.vel.x == 0
+            if Math.random() > .5 
+                @body.vel.x = -@speed
+            else
+                @body.vel.x = @speed
+        if wouldCollide(@, @body.vel.x, 0, solidMask)
+            if not wouldCollide(@, -@body.vel.x, 0, solidMask)
+                @body.vel.x *= -1
+        # check & update movement
+        @body.update(dt)
+        # handle collisions against other shapes
+        me.collision.check(this)
+        # return true if we moved or if the renderable was updated
+        return @_super(me.Entity, 'update', [ dt ]) or @body.vel.x != 0 or @body.vel.y != 0
+}
 
 game.MonsterShooter = me.Entity.extend {
     getRx: () ->
@@ -271,19 +325,19 @@ game.MonsterShooter = me.Entity.extend {
     getRy: () ->
         {pos, height} = @getBounds()
         return Math.round(0.5 + pos.y + @anchorPoint.y * (height - @renderable.height))
-    init: (x, y, settings) ->
+    init: (x, y, settings, image = 'monster_shooter') ->
         settings.width = 32
         settings.height = 32
         settings.spritewidth = 32
         settings.spriteheight = 32
-        settings.image = 'monster_shooter'
+        settings.image = image
         @facing = (settings.facing == 'left')
         @alwaysUpdate = true
         @_super(me.Entity, 'init', [x, y, settings])
         @body.collisionType = me.collision.types.WORLD_SHAPE
         @body.addShape(new me.Rect(0, 0, settings.width, settings.height))
         @body.setMaxVelocity(0,0)
-        @timeTilSpawn = 50
+        @timeTilSpawn = 25 + ~~(Math.random()*50)
         @nextKind = Math.min(3, ~~(Math.random() *4))
         @renderable.flipX(@facing)
     update: (dt) ->
@@ -298,6 +352,19 @@ game.MonsterShooter = me.Entity.extend {
                 @nextKind = (@nextKind + 1) % 4
             @timeTilSpawn = 25 + ~~(Math.random()*50)
 }
+
+game.BulletShooter = game.MonsterShooter.extend {
+    init: (x, y, settings) ->
+        @_super(game.MonsterShooter, 'init', [x, y, settings, 'bullet_shooter'])
+    update: (dt) ->
+        if @timeTilSpawn-- < 0
+            [x, y] = [@getRx(), @getRy()]
+            dx = (if @facing then -32 else 32)
+            vx = dx / 32 * 4
+            me.game.world.addChild(new game.Bullet(x + dx, y, vx))
+            @timeTilSpawn = 25 + ~~(Math.random()*50)
+}
+
 game.DeadMonster = me.Entity.extend {
     init: (x, y, settings) ->
         @_super(me.Entity, 'init', [x, y, settings])
@@ -313,15 +380,19 @@ game.DeadMonster = me.Entity.extend {
             me.game.world.removeChild(@)
 }
 
-game.Monster = me.Entity.extend {
-    getRx: () ->
-        {pos, width} = @getBounds()
-        return Math.round(0.5 + pos.x + @anchorPoint.x * (width - @renderable.width))
+game.Animation = me.Entity.extend {
+    init: (x, y, settings) ->
+        @_super(me.Entity, 'init', [x, y, settings])
+        @body.setMaxVelocity(0,0)
+        @body.setCollisionMask(me.collision.types.NO_OBJECT)
+        @alwaysUpdate = true
+    update: (dt) ->
+        @body.update(dt)
+        if @renderable.current.frame.length-1 <= @renderable.getCurrentAnimationFrame()
+            me.game.world.removeChild(@)
+}
 
-    getRy: () ->
-        {pos, height} = @getBounds()
-        return Math.round(0.5 + pos.y + @anchorPoint.y * (height - @renderable.height))
-
+game.Monster = game.ActorBase.extend {
     die: () ->
         [x, y] = [@getRx(), @getRy()]
         mon = new game.DeadMonster(x, y, @settings)
@@ -339,6 +410,7 @@ game.Monster = me.Entity.extend {
         @body.setVelocity @settings.speed, 10
         @body.addShape(new me.Rect(0, 0, settings.width, settings.height))
         @body.collisionType = me.collision.types.ENEMY_OBJECT
+        @baseInit()
     update: (dt) ->
         if @pos.y > me.game.world.height + 100
             me.game.world.removeChild(@)
@@ -352,13 +424,11 @@ game.Monster = me.Entity.extend {
         if wouldCollide(@, @body.vel.x, 0, me.collision.types.WORLD_SHAPE)
             if not wouldCollide(@, -@body.vel.x, 0, me.collision.types.WORLD_SHAPE)
                 @body.vel.x *= -1
-        # check & update movement
-        @body.update(dt)
-        # handle collisions against other shapes
-        me.collision.check(this)
-        # return true if we moved or if the renderable was updated
-        return @_super(me.Entity, 'update', [ dt ]) or @body.vel.x != 0 or @body.vel.y != 0
+        @baseUpdate(dt)
     onCollision: (response, other) ->
+        if other instanceof game.MovingPlatform
+            if response.overlapV.y > 0 and !@body.jumping
+                @onPlatform = other
         if response.b.body.collisionType != me.collision.types.WORLD_SHAPE
             # res.y >0 means touched by something on the bottom
             # which mean at top position for this one
@@ -411,6 +481,40 @@ game.OldCiriEnemy = game.Monster.extend {
         @body.vel.x = vx
 }
 
+game.Bullet = game.Monster.extend {
+    init: (x, y, vx) ->
+        settings = {
+            image: 'bullet'
+            width: 30, height: 30
+            frame: 0 # For dead monster
+            speed: 3
+            spritewidth: 32, spriteheight: 32
+        }
+        @_super(game.Monster, 'init', [x, y, settings])
+        @renderable.addAnimation('fly', [0,1])
+        @renderable.setCurrentAnimation('fly')
+        @body.vel.x = vx * 2
+        @renderable.flipX(@body.vel.x < 0)
+        @body.setMaxVelocity(Math.abs(@body.vel.x), 0)
+    update: (dt) ->
+        if wouldCollide(@, @body.vel.x, 0, me.collision.types.WORLD_SHAPE)
+            settings = {
+                image: 'explosion'
+                width: 32, height: 32
+                spritewidth: 32, spriteheight: 32
+            }
+            anim = new game.Animation(@pos.x, @pos.y, settings)
+            anim.renderable.addAnimation('stand', [0], 0)
+            anim.renderable.setCurrentAnimation('stand')
+            me.game.world.addChild(anim)
+            me.game.world.removeChild(@)
+        # check & update movement
+        @body.update(dt)
+        # handle collisions against other shapes
+        me.collision.check(this)
+        # return true if we moved or if the renderable was updated
+        return @_super(me.Entity, 'update', [ dt ]) or @body.vel.x != 0 or @body.vel.y != 0
+}
 portalObjects = {}
 justChanged = false
 game.Portal = me.Entity.extend {

@@ -3,28 +3,31 @@ game.resources = []
 defineLevels = (names) ->
     i = 0
     while i < names.length
-        game.resources.push
+        game.resources.push {
             name: names[i]
             type: 'tmx'
             src: 'src/levels/' + names[i] + '.tmx'
+        }
         i++
 
 defineImages = (names) ->
     i = 0
     while i < names.length
-        game.resources.push
+        game.resources.push {
             name: names[i]
             type: 'image'
             src: 'src/sprites/' + names[i] + '.png'
+        }
         i++
 
 defineSounds = (names) ->
     i = 0
     while i < names.length
-        game.resources.push
+        game.resources.push {
             name: names[i]
             type: 'audio'
             src: 'src/sounds/'
+        }
         i++
 
 defineImages [
@@ -34,13 +37,16 @@ defineImages [
     "area01_level_tiles"
     "bounce_spring"
     "bullet"
+    "bullet_explosion"
     "bullet_shooter"
     "ciriblock"
     "ciribot"
     "ciribot_tiles"
+    "explosion"
     "mario_tiles"
     "monster_shooter"
     "monsters"
+    "movingplatform"
     "oldciricaveblock"
     "oldcirienemies"
     "potfrog"
