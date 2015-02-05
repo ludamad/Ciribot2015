@@ -102,6 +102,7 @@ game.PlayerEntity = me.Entity.extend {
         @renderable.addAnimation('walk', [0,1,2,3])
         @renderable.addAnimation('stand', [0])
         @renderable.setCurrentAnimation('stand')
+        @firstUpdate = true
 
     _doStep: (dt) ->
         @body.update(dt)
@@ -128,8 +129,10 @@ game.PlayerEntity = me.Entity.extend {
             # set the jumping flag
             @body.jumping = true
     update: (dt) ->
-        @z = 1000000
-        me.game.world.sort()
+        if @firstUpdate 
+            @z = 1000000
+            me.game.world.sort()
+            @firstUpdate = false
         if me.input.isKeyPressed('block')
             [x, y] = [@getRx(), @getRy()]
             # {x, y} = @pos
