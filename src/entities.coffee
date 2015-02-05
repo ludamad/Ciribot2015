@@ -15,7 +15,7 @@ me.event.subscribe me.event.KEYUP, (action, keyCode) ->
     if keyCode == me.input.KEY.W or keyCode == me.input.KEY.UP
         jumpReleased = true
 
-wouldCollide = (obj, dx, dy, filter = me.objects.ALL_OBJECT) ->
+wouldCollide = (obj, dx, dy, filter = me.collision.types.ALL_OBJECT) ->
     {pos, width, height} = obj.getBounds()
     return testRect(pos.x + dx, pos.y + dy, width, height, filter, obj)
 
@@ -141,7 +141,6 @@ game.PlayerEntity = me.Entity.extend {
             @firstUpdate = false
         if me.input.isKeyPressed('block')
             [x, y] = [@getRx(), @getRy()]
-            # {x, y} = @pos
             if @renderable.lastflipX then x -= 32 else x += 32
             block = new game.PlayerBlock(Math.round(x/32)*32, Math.round(y/32)*32)
             _bounds = block.getBounds()
@@ -191,6 +190,14 @@ game.PlayerEntity = me.Entity.extend {
         # return true if we moved or if the renderable was updated
         @_super(me.Entity, 'update', [ dt ]) or @body.vel.x != 0 or @body.vel.y != 0
     onCollision: (response, other) ->
+        if other instanceof game.SpringEntity
+            if response.overlapV.y > 0 and !@body.jumping
+                @body.falling = false
+                @body.vel.y = -40
+                # set the jumping flag
+                @body.jumping = true; @body.falling = false
+                me.audio.play 'jump'
+                return false
         switch response.b.body.collisionType
             when me.collision.types.WORLD_SHAPE
                 return true
@@ -205,8 +212,6 @@ game.PlayerEntity = me.Entity.extend {
                     @body.jumping = true
                     # play some audio
                     me.audio.play 'stomp'
-                else 
-                    me.game.reset()
                 return false
             else
                 # Do not respond to other objects (e.g. coins)
@@ -219,7 +224,7 @@ game.PlayerEntity = me.Entity.extend {
 # Coin Entity
 ###
 
-game.CoinEntity = me.CollectableEntity.extend {
+game.Coin = me.CollectableEntity.extend {
     init: (x, y, settings) ->
         # call the parent constructor
         @_super(me.CollectableEntity, 'init', [x, y, settings])
@@ -235,52 +240,60 @@ game.CoinEntity = me.CollectableEntity.extend {
         return false
 }
 
-###*
-# Enemy Entity
-###
-
-game.EnemyEntity = me.Entity.extend {
+game.MonsterShooter = me.Entity.extend {
+    getRx: () ->
+        {pos, width} = @getBounds()
+        return Math.round(0.5 + pos.x + @anchorPoint.x * (width - @renderable.width))
+    getRy: () ->
+        {pos, height} = @getBounds()
+        return Math.round(0.5 + pos.y + @anchorPoint.y * (height - @renderable.height))
     init: (x, y, settings) ->
-        # define this here instead of tiled
-        settings.image = 'monsters'
-        # save the area size defined in Tiled
-        width = settings.width
-        height = settings.height
-        # adjust the size setting information to match the sprite size
-        # so that the entity object is created with the right size
-        settings.spritewidth = settings.width = 32
-        settings.spriteheight = settings.height = 32
+        settings.width = 32
+        settings.height = 32
+        settings.spritewidth = 32
+        settings.spriteheight = 32
+        settings.image = 'monster_shooter'
+        @facing = (settings.facing == 'left')
+        @alwaysUpdate = true
+        @_super(me.Entity, 'init', [x, y, settings])
+        @body.collisionType = me.collision.types.WORLD_SHAPE
+        @body.addShape(new me.Rect(0, 0, settings.width, settings.height))
+        @body.setMaxVelocity(0,0)
+        @timeTilSpawn = 10
+        @renderable.flipX(@facing)
+    update: (dt) ->
+        if @timeTilSpawn-- < 0
+            [x, y] = [@getRx(), @getRy()]
+            dx = (if @facing then -32 else 32)
+            me.game.world.addChild(new game.PotFrog(x + dx, y))
+            @timeTilSpawn = 10
+}
+
+game.Monster = me.Entity.extend {
+    init: (x, y, settings) ->
         # call the parent constructor
         @_super(me.Entity, 'init', [x, y, settings])
-        # set start/end position based on the initial area size
-        x = @pos.x
-        @startX = x
-        @endX = x + width - settings.spritewidth
-        @pos.x = x + width - settings.spritewidth
-        # manually update the entity bounds as we manually change the position
-        @updateBounds()
-        # to remember which side we were walking
         @walkLeft = false
         # walking & jumping speed
         @body.setVelocity 4, 6
-        @renderable.addAnimation('stand', [1])
-        @renderable.setCurrentAnimation('stand')
+        @body.addShape(new me.Rect(0, 0, settings.width, settings.height))
+        @body.collisionType = me.collision.types.ENEMY_OBJECT
     update: (dt) ->
-        if @alive
-            if @walkLeft and @pos.x <= @startX
-                @walkLeft = false
-            else if !@walkLeft and @pos.x >= @endX
-                @walkLeft = true
-            @renderable.flipX @walkLeft
-            @body.vel.x += if @walkLeft then -@body.accel.x else @body.accel.x
-        else
-            @body.vel.x = 0
+        if @body.vel.x == 0
+            if Math.random() > .5 
+                @body.vel.x = -4
+            else
+                @body.vel.x = 4
+        @renderable.flipX(@body.vel.x < 0)
+        if wouldCollide(@, @body.vel.x, 0)
+            if not wouldCollide(@, -@body.vel.x, 0)
+                @body.vel.x *= -1
         # check & update movement
         @body.update(dt)
         # handle collisions against other shapes
         me.collision.check(this)
         # return true if we moved or if the renderable was updated
-        @_super(me.Entity, 'update', [ dt ]) or @body.vel.x != 0 or @body.vel.y != 0
+        return @_super(me.Entity, 'update', [ dt ]) or @body.vel.x != 0 or @body.vel.y != 0
     onCollision: (response, other) ->
         if response.b.body.collisionType != me.collision.types.WORLD_SHAPE
             # res.y >0 means touched by something on the bottom
@@ -290,6 +303,16 @@ game.EnemyEntity = me.Entity.extend {
             return false
         # Make all other objects solid
         return true
+}
+
+game.PotFrog = game.Monster.extend {
+    init: (x, y) ->
+        settings = {
+            image: 'potfrog'
+            width: 32, height: 32
+            spritewidth: 32, spriteheight: 48
+        }        
+        @_super(game.Monster, 'init', [x, y, settings])
 }
 
 ###*
