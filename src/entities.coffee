@@ -126,8 +126,9 @@ game.PlayerEntity = me.Entity.extend {
         renderer.translate(x, y)
         @renderable.draw(renderer)
         renderer.translate(-x, -y)
+    hasFloorBelow: () -> wouldCollide(@, 0, Math.max(1, @body.vel.y), me.collision.types.WORLD_SHAPE)
     jump: () ->
-        if wouldCollide(@, 0, Math.max(4, @body.vel.y), me.collision.types.WORLD_SHAPE)
+        if @hasFloorBelow()
             charge_percent = Math.max(Math.abs(@body.vel.x) - MIN_SPEED, 0) / (MAX_SPEED - MIN_SPEED)
             # set current vel to the maximum defined value
             # gravity will then do the rest
@@ -139,8 +140,9 @@ game.PlayerEntity = me.Entity.extend {
             @z = 1000000
             me.game.world.sort()
             @firstUpdate = false
-        if me.input.isKeyPressed('block')
+        if me.input.isKeyPressed('block') and @hasFloorBelow()
             [x, y] = [@getRx(), @getRy()]
+            y += 4
             # {x, y} = @pos
             if @renderable.lastflipX then x -= 32 else x += 32
             block = new game.PlayerBlock(Math.round(x/32)*32, Math.round(y/32)*32)
