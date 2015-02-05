@@ -177,7 +177,7 @@ game.PlayerEntity = game.ActorBase.extend {
         @firstUpdate = true
         @baseInit()
 
-    hasFloorBelow: () -> wouldCollide(@, 0, Math.max(1, @body.vel.y), me.collision.types.WORLD_SHAPE, -4)
+    hasFloorBelow: () -> wouldCollide(@, 0, Math.max(1, @body.vel.y), me.collision.types.WORLD_SHAPE, -8)
 
     jump: () ->
         if @hasFloorBelow()
