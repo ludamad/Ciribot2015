@@ -30,6 +30,7 @@ defineSounds = (names) ->
 defineImages [
     'ciribot'
     'ciriblock'
+    'ciriblock_top'
     'spinning_coin_gold'
     '32x32_font'
     'title_screen'
