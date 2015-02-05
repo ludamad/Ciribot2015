@@ -98,7 +98,7 @@ game.PlayerEntity = me.Entity.extend {
         settings.z = 0
         @collided = false
         @_super(me.Entity, 'init', [x, y, settings])
-        @body.setMaxVelocity(MAX_SPEED, MAX_JUMP)
+        @body.setMaxVelocity(MAX_SPEED, MAX_JUMP*2)
         # set the display to follow our position on both axis
         me.game.viewport.follow(@pos, me.game.viewport.AXIS.BOTH)
         me.game.viewport.setDeadzone(0, 100)
@@ -135,6 +135,8 @@ game.PlayerEntity = me.Entity.extend {
             # set the jumping flag
             @body.jumping = true
     update: (dt) ->
+        if @pos.y > me.game.world.height + 100
+            location.reload()
         if @firstUpdate 
             @z = 1000000
             me.game.world.sort()
@@ -206,7 +208,7 @@ game.PlayerEntity = me.Entity.extend {
                     other.die()
                     # bounce (force jump)
                     @body.falling = false
-                    @body.vel.y = -@body.maxVel.y
+                    @body.vel.y = -MAX_JUMP
                     # set the jumping flag
                     @body.jumping = true
                     # play some audio
@@ -282,7 +284,7 @@ game.DeadMonster = me.Entity.extend {
         @alwaysUpdate = true
     update: (dt) ->
         @body.update(dt)
-        if @pos.y > 10000
+        if @pos.y > me.game.world.height + 100
             me.game.world.removeChild(@)
 }
 
@@ -313,6 +315,9 @@ game.Monster = me.Entity.extend {
         @body.addShape(new me.Rect(0, 0, settings.width, settings.height))
         @body.collisionType = me.collision.types.ENEMY_OBJECT
     update: (dt) ->
+        if @pos.y > me.game.world.height + 100
+            me.game.world.removeChild(@)
+            return
         if @body.vel.x == 0
             if Math.random() > .5 
                 @body.vel.x = -4
