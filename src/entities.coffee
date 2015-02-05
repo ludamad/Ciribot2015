@@ -7,7 +7,7 @@ MIN_SPEED = 4
 SPEED_INCR = 1/4
 MIN_JUMP = 10
 MAX_JUMP = 12
-BLOCK_FRAMES_TO_LIVE = 200
+BLOCK_FRAMES_TO_LIVE = 800
 
 jumpReleased = false
 
@@ -24,10 +24,10 @@ wouldCollide = (obj, dx, dy) ->
     return obj.collided
 
 game.InvisibleBlock = me.Entity.extend {
-    init: (x, y) ->
+    init: (x, y, width = 32, height = 32) ->
         settings = {
-            width: 32, height: 32
-            spritewidth: 32, spriteheight: 32
+            width: width, height: height
+            spritewidth: width, spriteheight: height
         }
         @_super(me.Entity, 'init', [x, y, settings])
         @body.collisionType = me.collision.types.WORLD_SHAPE
@@ -36,6 +36,20 @@ game.InvisibleBlock = me.Entity.extend {
     onCollision: (response, other) ->
         return false
 }
+
+game.BlockClearer = game.InvisibleBlock.extend {
+    init: (player) ->
+        [x,y] = [player.getRx(), player.getRy()]
+        [w,h] = [96, 96]
+        @_super(game.InvisibleBlock, 'init', [x - w/2, y - h/2, w, h])
+        @body.collisionMask = me.collision.types.WORLD_SHAPE
+        me.collision.check(@)
+    onCollision: (response, other) ->
+        if other instanceof game.PlayerBlock
+            me.game.world.removeChild(other)
+        return false
+}
+
 game.PlayerBlock = me.Entity.extend {
     init: (x, y) ->
         settings = {
@@ -91,10 +105,17 @@ game.PlayerEntity = me.Entity.extend {
 
     _doStep: (dt) ->
         @body.update(dt)
+
+    getRx: () ->
+        {pos, width} = @getBounds()
+        return Math.round(0.5 + pos.x + @anchorPoint.x * (width - @renderable.width))
+
+    getRy: () ->
+        {pos, height} = @getBounds()
+        return Math.round(0.5 + pos.y + @anchorPoint.y * (height - @renderable.height))
+
     draw : (renderer) ->
-        _bounds = @getBounds()
-        x = Math.round(0.5 + _bounds.pos.x + @anchorPoint.x * (_bounds.width - @renderable.width))
-        y = Math.round(0.5 + _bounds.pos.y + @anchorPoint.y * (_bounds.height - @renderable.height))
+        [x, y] = [@getRx(), @getRy()]
         renderer.translate(x, y)
         @renderable.draw(renderer)
         renderer.translate(-x, -y)
@@ -110,9 +131,7 @@ game.PlayerEntity = me.Entity.extend {
         @z = 1000000
         me.game.world.sort()
         if me.input.isKeyPressed('block')
-            _bounds = @getBounds()
-            x = Math.round(0.5 + _bounds.pos.x + @anchorPoint.x * (_bounds.width - @renderable.width))
-            y = Math.round(0.5 + _bounds.pos.y + @anchorPoint.y * (_bounds.height - @renderable.height))
+            [x, y] = [@getRx(), @getRy()]
             # {x, y} = @pos
             if @renderable.lastflipX then x -= 32 else x += 32
             block = new game.PlayerBlock(Math.round(x/32)*32, Math.round(y/32)*32)
@@ -123,6 +142,8 @@ game.PlayerEntity = me.Entity.extend {
                 block.updateBounds()
                 if not wouldCollide(block, 0, 0)
                     me.game.world.addChild(block)
+        if me.input.isKeyPressed('clear')
+            new game.BlockClearer(@) # Constructor handles everything necessary
 
         if me.input.isKeyPressed('left')
             # flip the sprite on horizontal axis
