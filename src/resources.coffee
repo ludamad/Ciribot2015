@@ -28,18 +28,23 @@ defineSounds = (names) ->
         i++
 
 defineImages [
-    'ciribot'
-    'ciriblock'
-    'ciriblock_top'
-    'spinning_coin_gold'
-    '32x32_font'
-    'title_screen'
-    'bounce_spring'
-    'area01_bkg0'
-    'area01_bkg1'
-    'area01_level_tiles'
-    'mario_tiles'
-    'monsters'
+    "32x32_font"
+    "area01_bkg0"
+    "area01_bkg1"
+    "area01_level_tiles"
+    "bounce_spring"
+    "bullet"
+    "bullet_shooter"
+    "ciriblock"
+    "ciribot"
+    "ciribot_tiles"
+    "mario_tiles"
+    "monster_shooter"
+    "monsters"
+    "oldciricaveblock"
+    "potfrog"
+    "spinning_coin_gold"
+    "title_screen"
 ]
 defineLevels [
     'area01'

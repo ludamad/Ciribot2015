@@ -6,6 +6,8 @@ game.PlayScreen = me.ScreenObject.extend {
         me.levelDirector.loadLevel 'area01'
         for layer in me.game.currentLevel.getLayers()
             if layer instanceof me.TMXLayer
+                if layer.name.indexOf("solid") != 0
+                    continue
                 x = 0
                 for row in layer.layerData
                     y = 0

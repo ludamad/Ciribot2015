@@ -16,10 +16,11 @@ nullObserver = new me.Polygon(0,0,[
 ])
 
 testObject = (poly, obj, filter) ->
+    if not obj.body?
+        return false
     if (filter & obj.body.collisionType) == 0 or not poly.getBounds().overlaps(obj.getBounds())
         return false
     for shape in obj.body.shapes
-
         if me.collision.testPolygonPolygon(nullObserver, poly, obj, shape, me.collision.response.clear())
             return true
     return false
@@ -61,8 +62,8 @@ window.game = {
         me.state.set(me.state.PLAY, new game.PlayScreen())
         # add our player entity in the entity pool
         me.pool.register('mainPlayer', game.PlayerEntity)
-        me.pool.register('CoinEntity', game.CoinEntity)
-        me.pool.register('EnemyEntity', game.EnemyEntity)
+        me.pool.register('Coin', game.Coin)
+        me.pool.register('MonsterShooter', game.MonsterShooter)
         me.pool.register('SpringEntity', game.SpringEntity)
         # enable the keyboard
         me.input.bindKey(me.input.KEY.LEFT, 'left')
