@@ -1,0 +1,14 @@
+{
+  "name": "Ciribot2015",
+  "version": "0.0.1",
+  "author": "Team Domuradical",
+  "description": "Platformer built with Melonjs using trendy Coffeescript instead of icky javascript",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ludamad/Ciribot2015"
+  },
+  "main": "index.html",
+  "devDependencies": {
+    "grunt": "~0.4.5"
+  }
+}

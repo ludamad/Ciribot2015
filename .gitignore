@@ -1,3 +1,6 @@
 ciribot2015
 *~
 src/*.js
+
+# project specific ignore
+node_modules/
