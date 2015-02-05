@@ -203,8 +203,7 @@ game.PlayerEntity = me.Entity.extend {
                 return true
             when me.collision.types.ENEMY_OBJECT
                 if response.overlapV.y > 0 and !@body.jumping
-                    other.body.setCollisionMask(me.collision.types.NO_OBJECT)
-                    me.game.world.removeChild(other)
+                    other.die()
                     # bounce (force jump)
                     @body.falling = false
                     @body.vel.y = -@body.maxVel.y
@@ -259,22 +258,57 @@ game.MonsterShooter = me.Entity.extend {
         @body.collisionType = me.collision.types.WORLD_SHAPE
         @body.addShape(new me.Rect(0, 0, settings.width, settings.height))
         @body.setMaxVelocity(0,0)
-        @timeTilSpawn = 10
+        @timeTilSpawn = 50
         @renderable.flipX(@facing)
     update: (dt) ->
         if @timeTilSpawn-- < 0
             [x, y] = [@getRx(), @getRy()]
             dx = (if @facing then -32 else 32)
-            me.game.world.addChild(new game.PotFrog(x + dx, y))
-            @timeTilSpawn = 10
+            vx = dx / 32 * 4
+            if Math.random() > .5
+                me.game.world.addChild(new game.PotFrog(x + dx, y, vx))
+            else
+                me.game.world.addChild(new game.Chicken(x + dx, y, vx))
+            @timeTilSpawn = 50
+}
+game.DeadMonster = me.Entity.extend {
+    init: (x, y, settings) ->
+        @_super(me.Entity, 'init', [x, y, settings])
+        @renderable.flipY(true)
+        @body.vel.y = 9
+        @body.setCollisionMask(me.collision.types.NO_OBJECT)
+        @renderable.addAnimation('stand', [settings.frame or 0])
+        @renderable.setCurrentAnimation('stand')
+        @alwaysUpdate = true
+    update: (dt) ->
+        @body.update(dt)
+        if @pos.y > 10000
+            me.game.world.removeChild(@)
 }
 
 game.Monster = me.Entity.extend {
+    getRx: () ->
+        {pos, width} = @getBounds()
+        return Math.round(0.5 + pos.x + @anchorPoint.x * (width - @renderable.width))
+
+    getRy: () ->
+        {pos, height} = @getBounds()
+        return Math.round(0.5 + pos.y + @anchorPoint.y * (height - @renderable.height))
+
+    die: () ->
+        [x, y] = [@getRx(), @getRy()]
+        mon = new game.DeadMonster(x, y, @settings)
+        me.game.world.addChild(mon)
+        @body.setCollisionMask(me.collision.types.NO_OBJECT)
+        me.game.world.removeChild(@)
+        return mon
+
     init: (x, y, settings) ->
         # call the parent constructor
         @_super(me.Entity, 'init', [x, y, settings])
         @walkLeft = false
         # walking & jumping speed
+        @settings = settings
         @body.setVelocity 4, 6
         @body.addShape(new me.Rect(0, 0, settings.width, settings.height))
         @body.collisionType = me.collision.types.ENEMY_OBJECT
@@ -306,13 +340,29 @@ game.Monster = me.Entity.extend {
 }
 
 game.PotFrog = game.Monster.extend {
-    init: (x, y) ->
+    init: (x, y, vx) ->
         settings = {
             image: 'potfrog'
             width: 32, height: 32
             spritewidth: 32, spriteheight: 48
-        }        
+        }
         @_super(game.Monster, 'init', [x, y, settings])
+        @renderable.translate(0, -8)
+        @body.vel.x = vx
+}
+
+game.Chicken = game.Monster.extend {
+    init: (x, y, vx) ->
+        settings = {
+            image: 'monsters'
+            width: 32, height: 32
+            frame: 1 # For dead monster
+            spritewidth: 32, spriteheight: 32
+        }
+        @_super(game.Monster, 'init', [x, y, settings])
+        @renderable.addAnimation('stand', [1])
+        @renderable.setCurrentAnimation('stand')
+        @body.vel.x = vx
 }
 
 ###*
