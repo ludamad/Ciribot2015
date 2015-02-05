@@ -196,6 +196,8 @@ game.PlayerEntity = me.Entity.extend {
                 return true
             when me.collision.types.ENEMY_OBJECT
                 if response.overlapV.y > 0 and !@body.jumping
+                    other.body.setCollisionMask(me.collision.types.NO_OBJECT)
+                    me.game.world.removeChild(other)
                     # bounce (force jump)
                     @body.falling = false
                     @body.vel.y = -@body.maxVel.y
@@ -203,6 +205,8 @@ game.PlayerEntity = me.Entity.extend {
                     @body.jumping = true
                     # play some audio
                     me.audio.play 'stomp'
+                else 
+                    me.game.reset()
                 return false
             else
                 # Do not respond to other objects (e.g. coins)
