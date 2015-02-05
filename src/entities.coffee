@@ -302,7 +302,7 @@ game.SpringEntity = me.Entity.extend {
         # adjust the size setting information to match the sprite size
         # so that the entity object is created with the right size
         settings.spritewidth = settings.width = 32
-        settings.spriteheight = settings.height = 
+        settings.spriteheight = settings.height = 32
         # call the parent constructor
         @_super(me.Entity, 'init', [x, y, settings])
         # set start/end position based on the initial area size
