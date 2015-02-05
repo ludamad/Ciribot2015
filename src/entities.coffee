@@ -15,6 +15,16 @@ me.event.subscribe me.event.KEYUP, (action, keyCode) ->
     if keyCode == me.input.KEY.W or keyCode == me.input.KEY.UP
         jumpReleased = true
 
+shouldReset = false
+wrapped = me.game.update
+me.game.update = (time) ->
+    if shouldReset
+        me.game.reset()
+        me.state.change(me.state.MENU)
+        shouldReset = false
+        return
+    wrapped(time)
+
 wouldCollide = (obj, dx, dy, filter = me.collision.types.ALL_OBJECT) ->
     {pos, width, height} = obj.getBounds()
     return testRect(pos.x + dx, pos.y + dy, width, height, filter, obj)
@@ -136,8 +146,9 @@ game.PlayerEntity = me.Entity.extend {
             # set the jumping flag
             @body.jumping = true
     update: (dt) ->
-        if @pos.y > me.game.world.height + 100
-            location.reload()
+        if @pos.y > me.game.world.height + 32
+            shouldReset = true
+            return
         if @firstUpdate 
             @z = 1000000
             me.game.world.sort()
