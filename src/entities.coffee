@@ -85,7 +85,7 @@ game.PlayerEntity = me.Entity.extend {
         # ensure the player is updated even when outside of the viewport
         @alwaysUpdate = true
         @renderable.translate(0,-7)
-        @renderable.addAnimation('walk', [0])
+        @renderable.addAnimation('walk', [0,1,2,3])
         @renderable.addAnimation('stand', [0])
         @renderable.setCurrentAnimation('stand')
 
