@@ -42,6 +42,7 @@ defineImages [
     "monster_shooter"
     "monsters"
     "oldciricaveblock"
+    "oldcirienemies"
     "potfrog"
     "spinning_coin_gold"
     "title_screen"

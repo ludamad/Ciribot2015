@@ -2,11 +2,11 @@
 # Player Entity
 ###
 
-MAX_SPEED = 8
-MIN_SPEED = 4
+MAX_SPEED = 9
+MIN_SPEED = 5
 SPEED_INCR = 1/4
-MIN_JUMP = 10
-MAX_JUMP = 12
+MIN_JUMP = 11
+MAX_JUMP = 14
 BLOCK_FRAMES_TO_LIVE = 800
 
 jumpReleased = false
@@ -112,7 +112,7 @@ game.PlayerEntity = me.Entity.extend {
         me.game.player = @
         @collided = false
         @_super(me.Entity, 'init', [x, y, settings])
-        @body.setMaxVelocity(MAX_SPEED, MAX_JUMP*2)
+        @body.setMaxVelocity(MAX_SPEED, 22)
         @body.collisionType = me.collision.types.PLAYER_OBJECT
         # set the display to follow our position on both axis
         me.game.viewport.follow(@pos, me.game.viewport.AXIS.BOTH)
@@ -228,7 +228,7 @@ game.PlayerEntity = me.Entity.extend {
                     if !@body.jumping
                         # bounce (force jump)
                         @body.falling = false
-                        @body.vel.y = -MAX_JUMP-5
+                        @body.vel.y = -17
                         # set the jumping flag
                         @body.jumping = true
                         # play some audio
@@ -284,17 +284,19 @@ game.MonsterShooter = me.Entity.extend {
         @body.addShape(new me.Rect(0, 0, settings.width, settings.height))
         @body.setMaxVelocity(0,0)
         @timeTilSpawn = 50
+        @nextKind = Math.min(3, ~~(Math.random() *4))
         @renderable.flipX(@facing)
     update: (dt) ->
         if @timeTilSpawn-- < 0
             [x, y] = [@getRx(), @getRy()]
             dx = (if @facing then -32 else 32)
             vx = dx / 32 * 4
-            if Math.random() > .5
+            if Math.random() < .1
                 me.game.world.addChild(new game.PotFrog(x + dx, y, vx))
             else
-                me.game.world.addChild(new game.Chicken(x + dx, y, vx))
-            @timeTilSpawn = 50
+                me.game.world.addChild(new game.OldCiriEnemy(x + dx, y, @nextKind, vx))
+                @nextKind = (@nextKind + 1) % 4
+            @timeTilSpawn = 25 + ~~(Math.random()*50)
 }
 game.DeadMonster = me.Entity.extend {
     init: (x, y, settings) ->
@@ -334,7 +336,7 @@ game.Monster = me.Entity.extend {
         @walkLeft = false
         # walking & jumping speed
         @settings = settings
-        @body.setVelocity 4, 6
+        @body.setVelocity @settings.speed, 10
         @body.addShape(new me.Rect(0, 0, settings.width, settings.height))
         @body.collisionType = me.collision.types.ENEMY_OBJECT
     update: (dt) ->
@@ -343,9 +345,9 @@ game.Monster = me.Entity.extend {
             return
         if @body.vel.x == 0
             if Math.random() > .5 
-                @body.vel.x = -4
+                @body.vel.x = -@settings.speed
             else
-                @body.vel.x = 4
+                @body.vel.x = @settings.speed
         @renderable.flipX(@body.vel.x < 0)
         if wouldCollide(@, @body.vel.x, 0, me.collision.types.WORLD_SHAPE)
             if not wouldCollide(@, -@body.vel.x, 0, me.collision.types.WORLD_SHAPE)
@@ -372,6 +374,7 @@ game.PotFrog = game.Monster.extend {
         settings = {
             image: 'potfrog'
             width: 32, height: 32
+            speed: 6
             spritewidth: 32, spriteheight: 48
         }
         @_super(game.Monster, 'init', [x, y, settings])
@@ -389,6 +392,21 @@ game.Chicken = game.Monster.extend {
         }
         @_super(game.Monster, 'init', [x, y, settings])
         @renderable.addAnimation('stand', [1])
+        @renderable.setCurrentAnimation('stand')
+        @body.vel.x = vx
+}
+
+game.OldCiriEnemy = game.Monster.extend {
+    init: (x, y, n, vx) ->
+        settings = {
+            image: 'oldcirienemies'
+            width: 32, height: 32
+            frame: n # For dead monster
+            speed: 3
+            spritewidth: 32, spriteheight: 32
+        }
+        @_super(game.Monster, 'init', [x, y, settings])
+        @renderable.addAnimation('stand', [n])
         @renderable.setCurrentAnimation('stand')
         @body.vel.x = vx
 }
