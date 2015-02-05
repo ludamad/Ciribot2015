@@ -29,9 +29,9 @@ me.game.update = (time) ->
         return
     wrapped(time)
 
-wouldCollide = (obj, dx, dy, filter = me.collision.types.ALL_OBJECT) ->
+wouldCollide = (obj, dx, dy, filter = me.collision.types.ALL_OBJECT, dw = 0, dh = 0) ->
     {pos, width, height} = obj.getBounds()
-    return testRect(pos.x + dx, pos.y + dy, width, height, filter, obj)
+    return testRect(pos.x + dx - dw / 2, pos.y + dy - dh / 2, width + dw, height + dh, filter, obj)
 
 game.InvisibleBlock = me.Entity.extend {
     init: (x, y, width = 32, height = 32) ->
@@ -177,7 +177,7 @@ game.PlayerEntity = game.ActorBase.extend {
         @firstUpdate = true
         @baseInit()
 
-    hasFloorBelow: () -> wouldCollide(@, -@body.vel.x, Math.max(1, @body.vel.y), me.collision.types.WORLD_SHAPE)
+    hasFloorBelow: () -> wouldCollide(@, 0, Math.max(1, @body.vel.y), me.collision.types.WORLD_SHAPE, -4)
 
     jump: () ->
         if @hasFloorBelow()
@@ -187,6 +187,20 @@ game.PlayerEntity = game.ActorBase.extend {
             @body.vel.y = -(MIN_JUMP + (MAX_JUMP - MIN_JUMP) * charge_percent)
             # set the jumping flag
             @body.jumping = true
+    tryMakeBlock: (dx) ->
+        [x, y] = [@getRx(), @getRy()]
+        x += dx
+        block = new game.PlayerBlock(Math.round(x/32)*32, Math.round(y/32)*32)
+        _bounds = block.getBounds()
+        if not testRect(_bounds.pos.x, _bounds.pos.y, 32, 32, solidMask)
+            me.game.world.addChild(block)
+            return true
+        block.pos.x = x; block.pos.y = y
+        block.updateBounds()
+        if not testRect(_bounds.pos.x, _bounds.pos.y, 32, 32, solidMask)
+            me.game.world.addChild(block)
+            return true
+        return false
     update: (dt) ->
         if @pos.y > me.game.world.height + 32
             shouldReset = true
@@ -198,17 +212,10 @@ game.PlayerEntity = game.ActorBase.extend {
         if me.input.isKeyPressed('block') and @hasFloorBelow()
             [x, y] = [@getRx(), @getRy()]
             y += 4
-            # {x, y} = @pos
-            if @renderable.lastflipX then x -= 32 else x += 32
-            block = new game.PlayerBlock(Math.round(x/32)*32, Math.round(y/32)*32)
-            _bounds = block.getBounds()
-            if not testRect(_bounds.pos.x, _bounds.pos.y, 32, 32)
-                me.game.world.addChild(block)
-            else
-                block.pos.x = x; block.pos.y = y
-                block.updateBounds()
-                if not testRect(_bounds.pos.x, _bounds.pos.y, 32, 32)
-                    me.game.world.addChild(block)
+            dx = 32
+            if @renderable.lastflipX 
+                dx = -32
+            @tryMakeBlock(2*dx) or @tryMakeBlock(dx)
         if me.input.isKeyPressed('clear')
             new game.BlockClearer(@) # Constructor handles everything necessary
 
@@ -350,6 +357,8 @@ game.MonsterShooter = me.Entity.extend {
             [x, y] = [@getRx(), @getRy()]
             dx = (if @facing then -32 else 32)
             vx = dx / 32 * 4
+            if wouldCollide(@, dx*1.25, 0, T.PLAYER_OBJECT, 16, 16)
+                return
             if Math.random() < .1
                 me.game.world.addChild(new game.PotFrog(x + dx, y, vx))
             else
@@ -366,6 +375,8 @@ game.BulletShooter = game.MonsterShooter.extend {
             [x, y] = [@getRx(), @getRy()]
             dx = (if @facing then -32 else 32)
             vx = dx / 32 * 4
+            if wouldCollide(@, dx*1.25, 0, T.PLAYER_OBJECT, 16, 16)
+                return
             me.game.world.addChild(new game.Bullet(x + dx, y, vx))
             @timeTilSpawn = 25 + ~~(Math.random()*50)
 }
