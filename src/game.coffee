@@ -64,6 +64,7 @@ window.game = {
         me.pool.register('mainPlayer', game.PlayerEntity)
         me.pool.register('Coin', game.Coin)
         me.pool.register('MonsterShooter', game.MonsterShooter)
+        me.pool.register('Portal', game.Portal)
         me.pool.register('SpringEntity', game.SpringEntity)
         # enable the keyboard
         me.input.bindKey(me.input.KEY.LEFT, 'left')

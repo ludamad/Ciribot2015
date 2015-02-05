@@ -109,6 +109,7 @@ game.PlayerEntity = me.Entity.extend {
         settings.spritewidth = 33 ; settings.spriteheight = 43
         settings.width = 30       ; settings.height = 30
         settings.z = 0
+        me.game.player = @
         @collided = false
         @_super(me.Entity, 'init', [x, y, settings])
         @body.setMaxVelocity(MAX_SPEED, MAX_JUMP*2)
@@ -250,6 +251,7 @@ game.Coin = me.CollectableEntity.extend {
     init: (x, y, settings) ->
         # call the parent constructor
         @_super(me.CollectableEntity, 'init', [x, y, settings])
+        @body.setCollisionMask(me.collision.types.PLAYER_OBJECT)
     onCollision: (response, other) ->
         # do something when collide
         me.audio.play 'cling'
@@ -345,8 +347,8 @@ game.Monster = me.Entity.extend {
             else
                 @body.vel.x = 4
         @renderable.flipX(@body.vel.x < 0)
-        if wouldCollide(@, @body.vel.x, 0)
-            if not wouldCollide(@, -@body.vel.x, 0)
+        if wouldCollide(@, @body.vel.x, 0, me.collision.types.WORLD_SHAPE)
+            if not wouldCollide(@, -@body.vel.x, 0, me.collision.types.WORLD_SHAPE)
                 @body.vel.x *= -1
         # check & update movement
         @body.update(dt)
@@ -389,6 +391,32 @@ game.Chicken = game.Monster.extend {
         @renderable.addAnimation('stand', [1])
         @renderable.setCurrentAnimation('stand')
         @body.vel.x = vx
+}
+
+portalObjects = {}
+justChanged = false
+game.Portal = me.Entity.extend {
+    init: (x, y, settings) ->
+        @_super(me.Entity, 'init', [x, y, settings])
+        portalObjects[settings.id] = @
+        @next_id = settings.next_id
+        @body.collisionType = me.collision.types.COLLECTABLE_OBJECT
+        @body.setCollisionMask(me.collision.types.NO_OBJECT)
+    update: (dt) ->
+        if me.input.isKeyPressed('down') 
+            if not justChanged and wouldCollide(@, 0, 0, me.collision.types.PLAYER_OBJECT)
+                p = me.game.player
+                next = portalObjects[@next_id]
+                bounds = next.getBounds()
+                centerx = bounds.left/2 + bounds.right/2
+                {pos} = p
+                if not testRect(centerx - 32, bounds.bottom - 64, 64, 64, me.collision.types.ENEMY_OBJECT)                    
+                    pos.x = centerx - 16
+                    pos.y = bounds.bottom - 32
+                    p.updateBounds()
+                    justChanged = true
+        else
+            justChanged = false
 }
 
 ###*

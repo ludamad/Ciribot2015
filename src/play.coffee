@@ -22,6 +22,14 @@ game.PlayScreen = me.ScreenObject.extend {
         # add our HUD to the game world
         @HUD = new (game.HUD.Container)
         me.game.world.addChild(@HUD)
+        {width, height} = me.game.world
+        # Add the 'invisible walls'
+        # Left wall
+        me.game.world.addChild(new game.InvisibleBlock(-width, 0, width, height))
+        # Top wall
+        me.game.world.addChild(new game.InvisibleBlock(0, -height, width, height))
+        # Right wall
+        me.game.world.addChild(new game.InvisibleBlock(width, 0, width, height))
     onDestroyEvent: ->
         # remove the HUD from the game world
         me.game.world.removeChild(@HUD)
