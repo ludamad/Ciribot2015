@@ -20,6 +20,7 @@ wrapped = me.game.update
 me.game.update = (time) ->
     if shouldReset
         me.game.reset()
+        me.audio.stopTrack()
         me.state.change(me.state.MENU)
         shouldReset = false
         return
