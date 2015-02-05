@@ -305,6 +305,7 @@ game.SpringEntity = me.Entity.extend {
         settings.spriteheight = settings.height = 32
         # call the parent constructor
         @_super(me.Entity, 'init', [x, y, settings])
+        @body.collisionType = me.collision.types.WORLD_SHAPE
         # set start/end position based on the initial area size
         x = @pos.x
         @startX = x
