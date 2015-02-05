@@ -34,6 +34,7 @@ defineImages [
     'spinning_coin_gold'
     '32x32_font'
     'title_screen'
+    'bounce_spring'
     'area01_bkg0'
     'area01_bkg1'
     'area01_level_tiles'

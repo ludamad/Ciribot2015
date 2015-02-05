@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.0" orientation="orthogonal" width="40" height="100" tilewidth="32" tileheight="32">
+<map version="1.0" orientation="orthogonal" renderorder="right-down" width="40" height="100" tilewidth="32" tileheight="32">
  <tileset firstgid="1" name="mario_tiles" tilewidth="32" tileheight="32" spacing="1" margin="1">
   <image source="../sprites/mario_tiles.png" trans="ffffff" width="457" height="525"/>
  </tileset>
@@ -73,6 +73,12 @@
   <object name="CoinEntity" x="736" y="2976" width="32" height="32">
    <properties>
     <property name="image" value="spinning_coin_gold"/>
+    <property name="spritewidth" value="32"/>
+   </properties>
+  </object>
+  <object name="SpringEntity" x="251" y="3099" width="36" height="35">
+   <properties>
+    <property name="image" value="bounce_spring.png"/>
     <property name="spritewidth" value="32"/>
    </properties>
   </object>
