@@ -15,13 +15,9 @@ me.event.subscribe me.event.KEYUP, (action, keyCode) ->
     if keyCode == me.input.KEY.W or keyCode == me.input.KEY.UP
         jumpReleased = true
 
-wouldCollide = (obj, dx, dy) ->
-    B = obj.getBounds()
-    B.pos.x += dx; B.pos.y += dy
-    obj.collided = false
-    me.collision.check(obj)
-    B.pos.x -= dx; B.pos.y -= dy
-    return obj.collided
+wouldCollide = (obj, dx, dy, filter = me.objects.ALL_OBJECT) ->
+    {pos, width, height} = obj.getBounds()
+    return testRect(pos.x + dx, pos.y + dy, width, height, filter, obj)
 
 game.InvisibleBlock = me.Entity.extend {
     init: (x, y, width = 32, height = 32) ->
@@ -63,7 +59,6 @@ game.PlayerBlock = me.Entity.extend {
         # @topSprite = new me.Sprite(0, 0, me.loader.getImage('ciriblock_top'))
         @alwaysUpdate = true
         @renderable.translate(0,-4)
-        @collided = false
         @framesToLive = BLOCK_FRAMES_TO_LIVE
         @body.setMaxVelocity(0,0)
     update: (dt) ->
@@ -74,7 +69,8 @@ game.PlayerBlock = me.Entity.extend {
         rY = 32*Math.round(y/32)
         if rX == x and rY == y
             return
-        if not wouldCollide(@, rX-x, rY-y)
+        {pos} = @getBounds()
+        if not testRect(pos.x+(rX-x), pos.y+(rY-y), 32, 32, me.collision.types.ALL_OBJECT, @)
             @pos.x = rX; @pos.y = rY
             @updateBounds()
 
@@ -92,12 +88,7 @@ game.PlayerBlock = me.Entity.extend {
         return Math.round(0.5 + pos.y + @anchorPoint.y * (height - @renderable.height))
 
     onCollision: (response, other) ->
-        @collided = true
         return false
-        # switch response.b.body.collisionType
-        #     when me.collision.types.WORLD_SHAPE
-        #         @collided = true
-        # return false
 }
 
 game.PlayerEntity = me.Entity.extend {
@@ -136,7 +127,7 @@ game.PlayerEntity = me.Entity.extend {
         @renderable.draw(renderer)
         renderer.translate(-x, -y)
     jump: () ->
-        if wouldCollide(@, 0, Math.max(4, @body.vel.y))
+        if wouldCollide(@, 0, Math.max(4, @body.vel.y), me.collision.types.WORLD_SHAPE)
             charge_percent = Math.max(Math.abs(@body.vel.x) - MIN_SPEED, 0) / (MAX_SPEED - MIN_SPEED)
             # set current vel to the maximum defined value
             # gravity will then do the rest
@@ -153,12 +144,13 @@ game.PlayerEntity = me.Entity.extend {
             # {x, y} = @pos
             if @renderable.lastflipX then x -= 32 else x += 32
             block = new game.PlayerBlock(Math.round(x/32)*32, Math.round(y/32)*32)
-            if not wouldCollide(block, 0, 0)
+            _bounds = block.getBounds()
+            if not testRect(_bounds.pos.x, _bounds.pos.y, 32, 32)
                 me.game.world.addChild(block)
             else
                 block.pos.x = x; block.pos.y = y
                 block.updateBounds()
-                if not wouldCollide(block, 0, 0)
+                if not testRect(_bounds.pos.x, _bounds.pos.y, 32, 32)
                     me.game.world.addChild(block)
         if me.input.isKeyPressed('clear')
             new game.BlockClearer(@) # Constructor handles everything necessary
@@ -201,7 +193,6 @@ game.PlayerEntity = me.Entity.extend {
     onCollision: (response, other) ->
         switch response.b.body.collisionType
             when me.collision.types.WORLD_SHAPE
-                @collided = true
                 return true
             when me.collision.types.ENEMY_OBJECT
                 if response.overlapV.y > 0 and !@body.jumping
