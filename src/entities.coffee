@@ -73,17 +73,19 @@ game.PlayerBlock = me.Entity.extend {
         @framesToLive = BLOCK_FRAMES_TO_LIVE
         @body.setMaxVelocity(0,0)
     update: (dt) ->
-        if @framesToLive-- < 0
-            me.game.world.removeChild(@)
         {x, y} = @pos
-        rX = 32*Math.round(x/32) 
-        rY = 32*Math.round(y/32)
-        if rX == x and rY == y
-            return
         {pos} = @getBounds()
-        if not testRect(pos.x+(rX-x), pos.y+(rY-y), 32, 32, me.collision.types.ALL_OBJECT, @)
-            @pos.x = rX; @pos.y = rY
-            @updateBounds()
+        if testRect(pos.x - 8, pos.y,48,32, me.collision.types.ENEMY_OBJECT, @)
+            @framesToLive = 0
+        if --@framesToLive < 0
+            me.game.world.removeChild(@)
+            return
+        # Snap to grid if need be and can be:
+        rX = 32*Math.round(x/32) ; rY = 32*Math.round(y/32)
+        if rX != x or rY != y # Need be?
+            if not testRect(pos.x+(rX-x), pos.y+(rY-y), 32, 32, me.collision.types.ALL_OBJECT, @) # Can be?
+                @pos.x = rX; @pos.y = rY
+                @updateBounds()
 
     draw: (renderer) ->
         [x, y] = [@getRx(), @getRy()]
@@ -110,6 +112,7 @@ game.PlayerEntity = me.Entity.extend {
         @collided = false
         @_super(me.Entity, 'init', [x, y, settings])
         @body.setMaxVelocity(MAX_SPEED, MAX_JUMP*2)
+        @body.collisionType = me.collision.types.PLAYER_OBJECT
         # set the display to follow our position on both axis
         me.game.viewport.follow(@pos, me.game.viewport.AXIS.BOTH)
         me.game.viewport.setDeadzone(0, 100)
@@ -219,15 +222,18 @@ game.PlayerEntity = me.Entity.extend {
             when me.collision.types.WORLD_SHAPE
                 return true
             when me.collision.types.ENEMY_OBJECT
-                if response.overlapV.y > 0 and !@body.jumping
+                if response.overlapV.y > 0 or (other.pos.y > @pos.y + 8)
                     other.die()
-                    # bounce (force jump)
-                    @body.falling = false
-                    @body.vel.y = -MAX_JUMP
-                    # set the jumping flag
-                    @body.jumping = true
-                    # play some audio
-                    me.audio.play 'stomp'
+                    if !@body.jumping
+                        # bounce (force jump)
+                        @body.falling = false
+                        @body.vel.y = -MAX_JUMP-5
+                        # set the jumping flag
+                        @body.jumping = true
+                        # play some audio
+                        me.audio.play 'stomp'
+                else
+                    shouldReset = true # DED!
                 return false
             else
                 # Do not respond to other objects (e.g. coins)
@@ -402,7 +408,7 @@ game.SpringEntity = me.Entity.extend {
         settings.spriteheight = settings.height = 32
         # call the parent constructor
         @_super(me.Entity, 'init', [x, y, settings])
-        @body.collisionType = me.collision.types.WORLD_SHAPE
+        @body.collisionType = me.collision.types.COLLECTABLE_OBJECT
         # set start/end position based on the initial area size
         x = @pos.x
         @startX = x
