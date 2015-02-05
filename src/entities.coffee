@@ -54,13 +54,15 @@ game.PlayerBlock = me.Entity.extend {
     init: (x, y) ->
         settings = {
             width: 32, height: 32
-            spritewidth: 32, spriteheight: 32
+            spritewidth: 32, spriteheight: 40
             image: 'ciriblock'
         }
         @_super(me.Entity, 'init', [x, y, settings])
         @body.collisionType = me.collision.types.WORLD_SHAPE
         @body.addShape(new me.Rect(0, 0, settings.width, settings.height))
+        # @topSprite = new me.Sprite(0, 0, me.loader.getImage('ciriblock_top'))
         @alwaysUpdate = true
+        @renderable.translate(0,-4)
         @collided = false
         @framesToLive = BLOCK_FRAMES_TO_LIVE
         @body.setMaxVelocity(0,0)
@@ -75,6 +77,19 @@ game.PlayerBlock = me.Entity.extend {
         if not wouldCollide(@, rX-x, rY-y)
             @pos.x = rX; @pos.y = rY
             @updateBounds()
+
+    draw: (renderer) ->
+        [x, y] = [@getRx(), @getRy()]
+        renderer.translate(x, y)
+        @renderable.draw(renderer)
+        renderer.translate(-x, -y)
+    getRx: () ->
+        {pos, width} = @getBounds()
+        return Math.round(0.5 + pos.x + @anchorPoint.x * (width - @renderable.width))
+
+    getRy: () ->
+        {pos, height} = @getBounds()
+        return Math.round(0.5 + pos.y + @anchorPoint.y * (height - @renderable.height))
 
     onCollision: (response, other) ->
         @collided = true
