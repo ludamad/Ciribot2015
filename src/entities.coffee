@@ -114,6 +114,7 @@ game.ActorBase = me.Entity.extend {
         @renderable.draw(renderer)
         renderer.translate(-x, -y)
     baseInit: () ->
+        @body.setMaxVelocity(MAX_SPEED, 22)
         @onPlatform = null
     getRx: () ->
         {pos, width} = @getBounds()
@@ -140,6 +141,19 @@ game.ActorBase = me.Entity.extend {
         me.collision.check(@)
         # return true if we moved or if the renderable was updated
         return @_super(me.Entity, 'update', [ dt ]) or @body.vel.x != 0 or @body.vel.y != 0
+    baseOnCollision: (response, other, playSounds = false) ->
+        if other instanceof game.MovingPlatform
+            if response.overlapV.y > 0 and !@body.jumping
+                @onPlatform = other
+        if other instanceof game.SpringEntity
+            if response.overlapV.y > 0 and !@body.jumping
+                @body.falling = false
+                @body.vel.y = -40
+                # set the jumping flag
+                @body.jumping = true; @body.falling = false
+                if playSounds
+                    me.audio.play 'jump'
+                return false
 }
 
 game.PlayerEntity = game.ActorBase.extend {
@@ -150,7 +164,6 @@ game.PlayerEntity = game.ActorBase.extend {
         me.game.player = @
         @collided = false
         @_super(me.Entity, 'init', [x, y, settings])
-        @body.setMaxVelocity(MAX_SPEED, 22)
         @body.collisionType = me.collision.types.PLAYER_OBJECT
         # set the display to follow our position on both axis
         me.game.viewport.follow(@pos, me.game.viewport.AXIS.BOTH)
@@ -164,7 +177,7 @@ game.PlayerEntity = game.ActorBase.extend {
         @firstUpdate = true
         @baseInit()
 
-    hasFloorBelow: () -> wouldCollide(@, 0, Math.max(1, @body.vel.y), me.collision.types.WORLD_SHAPE)
+    hasFloorBelow: () -> wouldCollide(@, -@body.vel.x, Math.max(1, @body.vel.y), me.collision.types.WORLD_SHAPE)
 
     jump: () ->
         if @hasFloorBelow()
@@ -231,17 +244,7 @@ game.PlayerEntity = game.ActorBase.extend {
         @baseUpdate(dt)
 
     onCollision: (response, other) ->
-        if other instanceof game.MovingPlatform
-            if response.overlapV.y > 0 and !@body.jumping
-                @onPlatform = other
-        if other instanceof game.SpringEntity
-            if response.overlapV.y > 0 and !@body.jumping
-                @body.falling = false
-                @body.vel.y = -40
-                # set the jumping flag
-                @body.jumping = true; @body.falling = false
-                me.audio.play 'jump'
-                return false
+        @baseOnCollision(response, other, true)
         switch response.b.body.collisionType
             when me.collision.types.WORLD_SHAPE
                 return true
@@ -310,6 +313,8 @@ game.MovingPlatform = me.Entity.extend {
         if wouldCollide(@, @body.vel.x, 0, solidMask)
             if not wouldCollide(@, -@body.vel.x, 0, solidMask)
                 @body.vel.x *= -1
+            else
+                @body.vel.x = 0
         # check & update movement
         @body.update(dt)
         # handle collisions against other shapes
@@ -368,7 +373,9 @@ game.BulletShooter = game.MonsterShooter.extend {
 game.DeadMonster = me.Entity.extend {
     init: (x, y, settings) ->
         @_super(me.Entity, 'init', [x, y, settings])
-        @renderable.flipY(true)
+        if settings.flipY != false
+            @renderable.flipY(settings.flipY)
+        @renderable.flipX(settings.flipX)
         @body.vel.y = 9
         @body.setCollisionMask(me.collision.types.NO_OBJECT)
         @renderable.addAnimation('stand', [settings.frame or 0])
@@ -395,6 +402,7 @@ game.Animation = me.Entity.extend {
 game.Monster = game.ActorBase.extend {
     die: () ->
         [x, y] = [@getRx(), @getRy()]
+        @settings.flipX = @body.lastflipX
         mon = new game.DeadMonster(x, y, @settings)
         me.game.world.addChild(mon)
         @body.setCollisionMask(me.collision.types.NO_OBJECT)
@@ -407,7 +415,6 @@ game.Monster = game.ActorBase.extend {
         @walkLeft = false
         # walking & jumping speed
         @settings = settings
-        @body.setVelocity @settings.speed, 10
         @body.addShape(new me.Rect(0, 0, settings.width, settings.height))
         @body.collisionType = me.collision.types.ENEMY_OBJECT
         @baseInit()
@@ -426,9 +433,7 @@ game.Monster = game.ActorBase.extend {
                 @body.vel.x *= -1
         @baseUpdate(dt)
     onCollision: (response, other) ->
-        if other instanceof game.MovingPlatform
-            if response.overlapV.y > 0 and !@body.jumping
-                @onPlatform = other
+        @baseOnCollision(response, other, false)
         if response.b.body.collisionType != me.collision.types.WORLD_SHAPE
             # res.y >0 means touched by something on the bottom
             # which mean at top position for this one
@@ -443,7 +448,7 @@ game.PotFrog = game.Monster.extend {
     init: (x, y, vx) ->
         settings = {
             image: 'potfrog'
-            width: 32, height: 32
+            width: 30, height: 30
             speed: 6
             spritewidth: 32, spriteheight: 48
         }
@@ -456,7 +461,7 @@ game.Chicken = game.Monster.extend {
     init: (x, y, vx) ->
         settings = {
             image: 'monsters'
-            width: 32, height: 32
+            width: 30, height: 30
             frame: 1 # For dead monster
             spritewidth: 32, spriteheight: 32
         }
@@ -488,6 +493,7 @@ game.Bullet = game.Monster.extend {
             width: 30, height: 30
             frame: 0 # For dead monster
             speed: 3
+            # flipY: false # For dead monster
             spritewidth: 32, spriteheight: 32
         }
         @_super(game.Monster, 'init', [x, y, settings])
