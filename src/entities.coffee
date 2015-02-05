@@ -2,11 +2,11 @@
 # Player Entity
 ###
 
-MAX_SPEED = 6
+MAX_SPEED = 8
 MIN_SPEED = 4
-SPEED_INCR = 1/8
-MIN_JUMP = 12
-MAX_JUMP = 14
+SPEED_INCR = 1/4
+MIN_JUMP = 10
+MAX_JUMP = 12
 BLOCK_FRAMES_TO_LIVE = 200
 
 jumpReleased = false
@@ -23,6 +23,19 @@ wouldCollide = (obj, dx, dy) ->
     B.pos.x -= dx; B.pos.y -= dy
     return obj.collided
 
+game.InvisibleBlock = me.Entity.extend {
+    init: (x, y) ->
+        settings = {
+            width: 32, height: 32
+            spritewidth: 32, spriteheight: 32
+        }
+        @_super(me.Entity, 'init', [x, y, settings])
+        @body.collisionType = me.collision.types.WORLD_SHAPE
+        @body.addShape(new me.Rect(0, 0, settings.width, settings.height))
+        @body.setMaxVelocity(0,0)
+    onCollision: (response, other) ->
+        return false
+}
 game.PlayerBlock = me.Entity.extend {
     init: (x, y) ->
         settings = {
@@ -61,7 +74,8 @@ game.PlayerBlock = me.Entity.extend {
 game.PlayerEntity = me.Entity.extend {
     init: (x, y, settings) ->
         settings.spritewidth = 33 ; settings.spriteheight = 43
-        settings.width = 32       ; settings.height = 32
+        settings.width = 30       ; settings.height = 30
+        settings.z = 0
         @collided = false
         @_super(me.Entity, 'init', [x, y, settings])
         @body.setMaxVelocity(MAX_SPEED, MAX_JUMP)
@@ -70,7 +84,7 @@ game.PlayerEntity = me.Entity.extend {
         me.game.viewport.setDeadzone(0, 100)
         # ensure the player is updated even when outside of the viewport
         @alwaysUpdate = true
-        @renderable.translate(0,-6)
+        @renderable.translate(0,-7)
         @renderable.addAnimation('walk', [0])
         @renderable.addAnimation('stand', [0])
         @renderable.setCurrentAnimation('stand')
@@ -93,12 +107,23 @@ game.PlayerEntity = me.Entity.extend {
             # set the jumping flag
             @body.jumping = true
     update: (dt) ->
+        @z = 1000000
+        me.game.world.sort()
         if me.input.isKeyPressed('block')
-            {x, y} = @getBounds().pos
-            mod = if @renderable.lastflipX then -32 else 32
-            if not wouldCollide(@, mod, 0)
-                block = new game.PlayerBlock(x + mod, y)
+            _bounds = @getBounds()
+            x = Math.round(0.5 + _bounds.pos.x + @anchorPoint.x * (_bounds.width - @renderable.width))
+            y = Math.round(0.5 + _bounds.pos.y + @anchorPoint.y * (_bounds.height - @renderable.height))
+            # {x, y} = @pos
+            if @renderable.lastflipX then x -= 32 else x += 32
+            block = new game.PlayerBlock(Math.round(x/32)*32, Math.round(y/32)*32)
+            if not wouldCollide(block, 0, 0)
                 me.game.world.addChild(block)
+            else
+                block.pos.x = x; block.pos.y = y
+                block.updateBounds()
+                if not wouldCollide(block, 0, 0)
+                    me.game.world.addChild(block)
+
         if me.input.isKeyPressed('left')
             # flip the sprite on horizontal axis
             @renderable.flipX(true)
