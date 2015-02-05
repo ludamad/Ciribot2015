@@ -289,3 +289,27 @@ game.EnemyEntity = me.Entity.extend {
         # Make all other objects solid
         return true
 }
+
+###*
+# Spring Entity
+###
+
+game.SpringEntity = me.Entity.extend {
+    init: (x, y, settings) ->
+        # define this here instead of tiled
+        settings.image = 'bounce_spring'
+        # save the area size defined in Tiled
+        width = settings.width
+        height = settings.height
+        # adjust the size setting information to match the sprite size
+        # so that the entity object is created with the right size
+        settings.spritewidth = settings.width = 32
+        settings.spriteheight = settings.height = 32
+        # call the parent constructor
+        @_super(me.Entity, 'init', [x, y, settings])
+        # set start/end position based on the initial area size
+        x = @pos.x
+        @startX = x
+        @endX = x + width - settings.spritewidth
+        @pos.x = x + width - settings.spritewidth
+}
