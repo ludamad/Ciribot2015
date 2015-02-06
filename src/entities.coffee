@@ -151,7 +151,7 @@ game.ActorBase = me.Entity.extend {
         if other instanceof game.SpringEntity
             if response.overlapV.y > 0 and !@body.jumping
                 @body.falling = false
-                @body.vel.y = -40
+                @body.vel.y = -45
                 @controllingJump = false
                 # set the jumping flag
                 @body.jumping = true; @body.falling = false
@@ -292,7 +292,7 @@ game.PlayerEntity = game.ActorBase.extend {
                 if response.overlapV.y > 0 or (other.pos.y > @pos.y + 8)
                     other.die()
                     if !@body.jumping
-                        @jump(-15, true)
+                        @jump(-12, true)
                         me.audio.play('jump')
                 else if (other instanceof game.Bullet) and (response.overlapV.y < 0 or (other.pos.y + 24 < @pos.y))
                     return true
@@ -319,6 +319,7 @@ game.Coin = me.CollectableEntity.extend {
         # do something when collide
         me.audio.play 'cling'
         # give some score
+        game.data.coins++
         game.data.score += 250
         # make sure it cannot be collected "again"
         @body.setCollisionMask(me.collision.types.NO_OBJECT)

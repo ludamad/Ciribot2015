@@ -34,6 +34,7 @@ game.PlayScreen = me.ScreenObject.extend {
                     x++
         # reset the score
         game.data.score = 0
+        game.data.coins = 0
         # add our HUD to the game world
         @HUD = new game.HUD.Container()
         {width, height} = me.game.world
