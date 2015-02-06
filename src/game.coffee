@@ -29,7 +29,10 @@ window.testRect = (x, y, w, h, filter = me.collision.types.ALL_OBJECT, objFilter
     # retreive a list of potential colliding objects
     poly = getPoly(x,y,w,h)
     for obj in me.collision.quadTree.retrieve(poly)
-        if obj != objFilter and testObject(poly, obj, filter)
+        passes = (obj != objFilter)
+        if typeof objFilter == "function"
+            passes = objFilter(obj)
+        if passes and testObject(poly, obj, filter)
             return true
     return false
  
