@@ -183,14 +183,16 @@ game.PlayerEntity = game.ActorBase.extend {
             return false
         return wouldCollide(@, 0, Math.max(1, @body.vel.y), me.collision.types.WORLD_SHAPE, -8)
 
-    jump: (ignoreCheck = false) ->
-        if ignoreCheck or @hasFloorBelow()
-            charge_percent = Math.max(Math.abs(@body.vel.x) - MIN_SPEED, 0) / (MAX_SPEED - MIN_SPEED)
-            # set current vel to the maximum defined value
-            # gravity will then do the rest
-            @body.vel.y = -(MIN_JUMP + (MAX_JUMP - MIN_JUMP) * charge_percent)
+    handleJump: () ->
+        if @controllingJump and @body.jumping and @body.vel.y < 0
+            @body.vel.y -= 1
+
+    jump: (amount, forceJump = false) ->
+        if forceJump or @hasFloorBelow()
+            @body.vel.y = amount
             # set the jumping flag
             @body.jumping = true
+        @controllingJump = not forceJump
     tryMakeBlock: (dx) ->
         [x, y] = [@getRx(), @getRy()]
         x += dx
@@ -246,12 +248,13 @@ game.PlayerEntity = game.ActorBase.extend {
         if me.input.isKeyPressed('down')
             @body.vel.x = 0
 
-        # holdingJump = me.input.isKeyPressed('jump')
         # # Jump on every 'edge'
-        if jumpReleased or me.input.isKeyPressed('jump') #holding_jump != holdingJump
-            @jump()
+        if jumpReleased
+            @controllingJump = false
+        if me.input.isKeyPressed('jump') 
+            @jump(-5)
+        @handleJump()
         jumpReleased = false
-        # holding_jump = holdingJump
         @baseUpdate(dt)
 
     onCollision: (response, other) ->
@@ -263,7 +266,7 @@ game.PlayerEntity = game.ActorBase.extend {
                 if response.overlapV.y > 0 or (other.pos.y > @pos.y + 8)
                     other.die()
                     if !@body.jumping
-                        @jump(true)
+                        @jump(-8, true)
                         # play some audio
                         me.audio.play 'stomp'
                 else if (other instanceof game.Bullet) and (response.overlapV.y < 0 or (other.pos.y + 24 < @pos.y))
