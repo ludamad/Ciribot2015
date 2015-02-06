@@ -117,7 +117,7 @@ game.ActorBase = me.Entity.extend {
         @baseDraw(renderer)
     baseInit: () ->
         @alwaysUpdate = true
-        @body.setMaxVelocity(MAX_SPEED, 22)
+        @body.setMaxVelocity(MAX_SPEED, 30)
         @onPlatform = null
     getRx: () ->
         {pos, width} = @getBounds()
@@ -216,7 +216,7 @@ game.PlayerEntity = game.ActorBase.extend {
             @body.vel.y = amount
             # set the jumping flag
             @body.jumping = true
-            @jumpTimer = 6
+            @jumpTimer = 5
             @controllingJump = not forceJump
     tryMakeBlock: (dx) ->
         [x, y] = [@getRx(), @getRy()]
@@ -297,7 +297,7 @@ game.PlayerEntity = game.ActorBase.extend {
                 else if (other instanceof game.Bullet) and (response.overlapV.y < 0 or (other.pos.y + 24 < @pos.y))
                     return true
                 else 
-                    @takeDamage(10, 10)
+                    @takeDamage(20, 10)
                 return false
             else
                 # Do not respond to other objects (e.g. coins)
