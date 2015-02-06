@@ -108,11 +108,13 @@ game.PlayerBlock = me.Entity.extend {
 }
 
 game.ActorBase = me.Entity.extend {
-    draw : (renderer) ->
+    baseDraw : (renderer) ->
         [x, y] = [@getRx(), @getRy()]
         renderer.translate(x, y)
         @renderable.draw(renderer)
         renderer.translate(-x, -y)
+    draw: (renderer)->
+        @baseDraw(renderer)
     baseInit: () ->
         @alwaysUpdate = true
         @body.setMaxVelocity(MAX_SPEED, 22)
@@ -173,12 +175,25 @@ game.PlayerEntity = game.ActorBase.extend {
         # ensure the player is updated even when outside of the viewport
         @alwaysUpdate = true
         @renderable.translate(0,-7)
-        @renderable.addAnimation('walk', [0,1,2,3])
+        @renderable.addAnimation('walk', [0,1,2,3], 100)
         @renderable.addAnimation('stand', [0])
         @renderable.setCurrentAnimation('stand')
         @firstUpdate = true
         @jumpTimer = 0
+        @health = 100
+        @invincibleFrames = 10
         @baseInit()
+    takeDamage: (amount, frames) ->
+        if @invincibleFrames <= 0
+            @health = Math.max(0, @health - amount)
+            if @health <= 0
+                shouldReset = true
+            me.audio.play('stomp')
+            @renderable.flicker(200)
+            @invincibleFrames = frames
+
+    giveInvincibileFrames: (n) ->
+        @invincibleFrames = Math.max(@invincibleFrames, n)
 
     hasFloorBelow: () -> 
         if wouldCollide(@,0,0, me.collision.types.WORLD_SHAPE)
@@ -258,6 +273,7 @@ game.PlayerEntity = game.ActorBase.extend {
         if me.input.isKeyPressed('down')
             @body.vel.x = 0
 
+        @invincibleFrames = Math.max(0, @invincibleFrames - 1)
         # # Jump on every 'edge'
         if jumpReleased
             @controllingJump = false
@@ -277,12 +293,11 @@ game.PlayerEntity = game.ActorBase.extend {
                     other.die()
                     if !@body.jumping
                         @jump(-15, true)
-                        # play some audio
-                        me.audio.play 'stomp'
+                        me.audio.play('jump')
                 else if (other instanceof game.Bullet) and (response.overlapV.y < 0 or (other.pos.y + 24 < @pos.y))
                     return true
                 else 
-                    shouldReset = true # DED!
+                    @takeDamage(10, 10)
                 return false
             else
                 # Do not respond to other objects (e.g. coins)
@@ -574,6 +589,7 @@ game.Portal = me.Entity.extend {
                     pos.x = centerx - 16
                     pos.y = bounds.bottom - 32
                     p.updateBounds()
+                    p.giveInvincibileFrames(10)
                     justChanged = true
         else
             justChanged = false

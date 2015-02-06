@@ -14,8 +14,7 @@ game.HUD.Container = me.Container.extend(init: ->
     @z = Infinity
     # give a name
     @name = 'HUD'
-    # add our child score object at the right-bottom position
-    @addChild new (game.HUD.ScoreItem)(630, 440)
+    @addChild new game.HUD.ScoreItem(0, 0)
     return
 )
 
@@ -27,26 +26,27 @@ game.HUD.ScoreItem = me.Renderable.extend(
     init: (x, y) ->
         # call the parent constructor 
         # (size does not matter here)
-        @_super me.Renderable, 'init', [
-            x
-            y
-            10
-            10
-        ]
+        @_super(me.Renderable, 'init', [x,y,640,480])
         # create a font
         @font = new (me.BitmapFont)('32x32_font', 32)
-        @font.set 'right'
-        # local copy of the global score
-        @score = -1
-        return
-    update: ->
-        # we don't do anything fancy here, so just
-        # return true if the score has been updated
-        if @score != game.data.score
-            @score = game.data.score
-            return true
-        false
+        @font.set('right')
+    update: () ->
+        return true
     draw: (renderer) ->
-        @font.draw renderer, game.data.score, @pos.x, @pos.y
-        return
+        {x, y} = @pos
+        @font.draw(renderer, "Health", x + 49, y + 99)
+        player = me.game.player
+        X = x+60 ; Y = y+20
+        W = 500 ; H = 20
+        _alpha = renderer.globalAlpha()
+        renderer.setColor('black')
+        renderer.fillRect(X-1, Y-1, W+2, H + 2)
+        renderer.setColor('red')
+        renderer.fillRect(X,Y, W, H )
+        renderer.setColor('#346524');
+        if @health < 50 then renderer.setColor('yellow')
+        # if @health < 50 then renderer.setColor('red');
+        # get viewport position
+        renderer.fillRect(X,Y, W * player.health/100, H);
+        renderer.setGlobalAlpha(_alpha)
 )

@@ -5,6 +5,14 @@ game.PlayScreen = me.ScreenObject.extend {
         me.audio.playTrack 'ciribot_theme'
         # load a level
         me.levelDirector.loadLevel window.CURRENT_LEVEL
+        chainX = 0 ; chainY = 0
+        chainLen = 0
+        chainOff = null
+        flushChainObj = () ->
+            if chainLen > 0
+                me.game.world.addChild new game.InvisibleBlock(chainOff.x + chainX*32, chainOff.y + chainY*32, 32, 32*chainLen)
+            chainX = 0 ; chainY = 0
+            chainLen = 0
         for layer in me.game.currentLevel.getLayers()
             if layer instanceof me.TMXLayer
                 if layer.name.indexOf("solid") != 0
@@ -15,22 +23,21 @@ game.PlayScreen = me.ScreenObject.extend {
                     y = 0
                     for tile in row 
                         if tile
-                            # if chainObj == null
-                            toff = tile.tileset.tileoffset
-                            chainObj = new game.InvisibleBlock(toff.x + x*32, toff.y + y*32)
-                            me.game.world.addChild(chainObj)
-                            # else
-                            #     chainObj.getBounds().height += 32
-                        # else 
-                        #     chainObj = null
+                            if chainLen == 0
+                                chainX = x; chainY = y
+                                chainOff = tile.tileset.tileoffset
+                            chainLen++
+                        else 
+                            flushChainObj()
                         y++
+                    flushChainObj()
                     x++
         # reset the score
         game.data.score = 0
         # add our HUD to the game world
-        @HUD = new (game.HUD.Container)
-        me.game.world.addChild(@HUD)
+        @HUD = new game.HUD.Container()
         {width, height} = me.game.world
+        me.game.world.addChild(@HUD)
         # Add the 'invisible walls'
         # Left wall
         me.game.world.addChild(new game.InvisibleBlock(-width, 0, width, height))
