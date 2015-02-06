@@ -78,7 +78,7 @@ game.PlayerBlock = me.Entity.extend {
     update: (dt) ->
         {x, y} = @pos
         {pos} = @getBounds()
-        if testRect(pos.x - 8, pos.y,48,32, me.collision.types.ENEMY_OBJECT, @)
+        if testRect(pos.x - 8, pos.y,48,32, me.collision.types.ENEMY_OBJECT, (o) -> not (o instanceof game.Bullet))
             @framesToLive = 0
         if --@framesToLive < 0
             me.game.world.removeChild(@)
