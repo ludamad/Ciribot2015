@@ -60,7 +60,7 @@ defineLevels [
     'area02'
 ]
 defineSounds [
-    #'ciribot_theme'
+    'ciribot_theme'
     'cling'
     'stomp'
     'jump'
