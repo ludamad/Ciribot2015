@@ -28,6 +28,7 @@ me.game.update = (time) ->
         shouldReset = false
         return
     wrapped(time)
+    game.data.steps += 1
 
 wouldCollide = (obj, dx, dy, filter = me.collision.types.ALL_OBJECT, dw = 0, dh = 0) ->
     {pos, width, height} = obj.getBounds()
@@ -575,8 +576,7 @@ game.Portal = me.Entity.extend {
         @body.setCollisionMask(me.collision.types.NO_OBJECT)
     update: (dt) ->
         if me.input.isKeyPressed('down') 
-
-            if not justChanged and wouldCollide(@, 0, 0, me.collision.types.PLAYER_OBJECT)
+            if not justChanged and wouldCollide(@, 4, 16, me.collision.types.PLAYER_OBJECT, -16, -32)
                 if @next_id == null
                     window.CURRENT_LEVEL = @next_level
                     shouldReset = true
@@ -594,6 +594,38 @@ game.Portal = me.Entity.extend {
                     justChanged = true
         else
             justChanged = false
+}
+
+
+###*
+# Health Powerup
+###
+
+game.HealthPowerup = me.CollectableEntity.extend {
+    init: (x, y) ->
+        settings = {
+            image: 'ciribot_health'
+            width: 32, height: 32
+            speed: 6
+        }
+        height = settings.height
+        # call the parent constructor
+        @_super(me.CollectableEntity, 'init', [x, y, settings])
+        @body.setCollisionMask(me.collision.types.PLAYER_OBJECT)
+
+    onCollision: (response, other) ->
+        if other.health == 100
+            return false
+        # do something when collide
+        me.audio.play 'cling'
+        # give some score
+        game.data.score += 250
+        me.game.player.health = Math.min(100, other.health + 35)
+        # make sure it cannot be collected "again"
+        @body.setCollisionMask(me.collision.types.NO_OBJECT)
+        # remove it
+        me.game.world.removeChild(this)
+        return false
 }
 
 ###*

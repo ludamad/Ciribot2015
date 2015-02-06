@@ -32,6 +32,7 @@ defineSounds = (names) ->
 
 defineImages [
     "32x32_font"
+    "32x32_font_white"
     "area01_bkg0"
     "area01_bkg1"
     "area01_level_tiles"
@@ -41,6 +42,7 @@ defineImages [
     "bullet_shooter"
     "ciriblock"
     "ciribot"
+    'ciribot_health'
     "ciribot_tiles"
     "explosion"
     "normal_block" 

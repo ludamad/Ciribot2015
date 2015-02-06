@@ -42,6 +42,7 @@ window.testRect = (x, y, w, h, filter = me.collision.types.ALL_OBJECT, objFilter
 window.game = {
     data: {
         score: 0
+        steps: 0
     }
     onload: () ->
         # Initialize the video.
@@ -70,6 +71,7 @@ window.game = {
         me.pool.register('BulletShooter', game.BulletShooter)
         me.pool.register('Portal', game.Portal)
         me.pool.register('SpringEntity', game.SpringEntity)
+        me.pool.register('HealthPowerup', game.HealthPowerup)
         me.pool.register('MovingPlatform', game.MovingPlatform)
         # enable the keyboard
         me.input.bindKey(me.input.KEY.LEFT, 'left')
