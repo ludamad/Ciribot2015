@@ -11,11 +11,18 @@ game.PlayScreen = me.ScreenObject.extend {
                     continue
                 x = 0
                 for row in layer.layerData
+                    chainObj = null
                     y = 0
                     for tile in row 
                         if tile
+                            # if chainObj == null
                             toff = tile.tileset.tileoffset
-                            me.game.world.addChild(new game.InvisibleBlock(toff.x + x*32, toff.y + y*32))
+                            chainObj = new game.InvisibleBlock(toff.x + x*32, toff.y + y*32)
+                            me.game.world.addChild(chainObj)
+                            # else
+                            #     chainObj.getBounds().height += 32
+                        # else 
+                        #     chainObj = null
                         y++
                     x++
         # reset the score

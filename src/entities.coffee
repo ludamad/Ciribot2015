@@ -189,14 +189,19 @@ game.PlayerEntity = game.ActorBase.extend {
         if --@jumpTimer <= 0
             @controllingJump = false
         if @controllingJump and @body.jumping and @body.vel.y < 0
-            @body.vel.y -= 2.5
+            if @jumpTimer < 3
+                @body.vel.y -= 1
+            else if @jumpTimer < 5
+                @body.vel.y -= 2
+            else
+                @body.vel.y -= 3
 
     jump: (amount, forceJump = false) ->
         if forceJump or (!@body.jumping and @hasFloorBelow())
             @body.vel.y = amount
             # set the jumping flag
             @body.jumping = true
-            @jumpTimer = 5
+            @jumpTimer = 6
             @controllingJump = not forceJump
     tryMakeBlock: (dx) ->
         [x, y] = [@getRx(), @getRy()]
@@ -257,7 +262,7 @@ game.PlayerEntity = game.ActorBase.extend {
         if jumpReleased
             @controllingJump = false
         if me.input.isKeyPressed('jump') 
-            @jump(-4)
+            @jump(-6)
         @handleJump()
         jumpReleased = false
         @baseUpdate(dt)
