@@ -35,7 +35,7 @@ game.PlayScreen = me.ScreenObject.extend {
         # reset the score
         game.data.score = 0
         # add our HUD to the game world
-        @HUD = new (game.HUD.Container)
+        @HUD = new game.HUD.Container()
         {width, height} = me.game.world
         me.game.world.addChild(@HUD)
         # Add the 'invisible walls'
