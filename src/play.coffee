@@ -1,9 +1,10 @@
+window.CURRENT_LEVEL = 'area01'
 game.PlayScreen = me.ScreenObject.extend {
     onResetEvent: ->
         # play the audio track
         me.audio.playTrack 'ciribot_theme'
         # load a level
-        me.levelDirector.loadLevel 'area01'
+        me.levelDirector.loadLevel window.CURRENT_LEVEL
         for layer in me.game.currentLevel.getLayers()
             if layer instanceof me.TMXLayer
                 if layer.name.indexOf("solid") != 0

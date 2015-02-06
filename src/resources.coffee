@@ -43,18 +43,21 @@ defineImages [
     "ciribot"
     "ciribot_tiles"
     "explosion"
+    "normal_block" 
     "mario_tiles"
     "monster_shooter"
     "monsters"
     "movingplatform"
     "oldciricaveblock"
     "oldcirienemies"
+    "oldciribot"
     "potfrog"
     "spinning_coin_gold"
     "title_screen"
 ]
 defineLevels [
     'area01'
+    'area02'
 ]
 defineSounds [
     'ciribot_theme'

@@ -114,6 +114,7 @@ game.ActorBase = me.Entity.extend {
         @renderable.draw(renderer)
         renderer.translate(-x, -y)
     baseInit: () ->
+        @alwaysUpdate = true
         @body.setMaxVelocity(MAX_SPEED, 22)
         @onPlatform = null
     getRx: () ->
@@ -177,7 +178,10 @@ game.PlayerEntity = game.ActorBase.extend {
         @firstUpdate = true
         @baseInit()
 
-    hasFloorBelow: () -> wouldCollide(@, 0, Math.max(1, @body.vel.y), me.collision.types.WORLD_SHAPE, -8)
+    hasFloorBelow: () -> 
+        if wouldCollide(@,0,0, me.collision.types.WORLD_SHAPE)
+            return false
+        return wouldCollide(@, 0, Math.max(1, @body.vel.y), me.collision.types.WORLD_SHAPE, -8)
 
     jump: () ->
         if @hasFloorBelow()
@@ -538,12 +542,18 @@ game.Portal = me.Entity.extend {
     init: (x, y, settings) ->
         @_super(me.Entity, 'init', [x, y, settings])
         portalObjects[settings.id] = @
-        @next_id = settings.next_id
+        @next_id = settings.next_id or null
+        @next_level = settings.next_level or null
         @body.collisionType = me.collision.types.COLLECTABLE_OBJECT
         @body.setCollisionMask(me.collision.types.NO_OBJECT)
     update: (dt) ->
         if me.input.isKeyPressed('down') 
+
             if not justChanged and wouldCollide(@, 0, 0, me.collision.types.PLAYER_OBJECT)
+                if @next_id == null
+                    window.CURRENT_LEVEL = @next_level
+                    shouldReset = true
+                    return
                 p = me.game.player
                 next = portalObjects[@next_id]
                 bounds = next.getBounds()
