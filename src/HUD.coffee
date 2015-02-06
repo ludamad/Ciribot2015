@@ -36,7 +36,7 @@ game.HUD.ScoreItem = me.Renderable.extend(
         {x, y} = @pos
         {health} = me.game.player
         X = x+60 ; Y = y+320
-        W = 25*10 ; H = 32
+        W = 25*5 ; H = 32
         renderer.setColor('white')
         @font.draw(renderer, game.data.coins, X+500, Y)
         # _alpha = renderer.globalAlpha()
@@ -53,7 +53,7 @@ game.HUD.ScoreItem = me.Renderable.extend(
         # renderer.fillRect(X,Y, W * player.health/100, H);
         # renderer.setGlobalAlpha(_alpha)
         i = 0
-        while (i+1) * 10 <= health
+        while (i+1) * 20 <= health
             renderer.translate(X + i * 25, Y)
             @ciriSprite.draw(renderer)
             renderer.translate(-X - i * 25, -Y)
