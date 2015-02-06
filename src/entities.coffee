@@ -150,6 +150,7 @@ game.ActorBase = me.Entity.extend {
             if response.overlapV.y > 0 and !@body.jumping
                 @body.falling = false
                 @body.vel.y = -40
+                @controllingJump = false
                 # set the jumping flag
                 @body.jumping = true; @body.falling = false
                 if playSounds
@@ -176,6 +177,7 @@ game.PlayerEntity = game.ActorBase.extend {
         @renderable.addAnimation('stand', [0])
         @renderable.setCurrentAnimation('stand')
         @firstUpdate = true
+        @jumpTimer = 0
         @baseInit()
 
     hasFloorBelow: () -> 
@@ -184,15 +186,18 @@ game.PlayerEntity = game.ActorBase.extend {
         return wouldCollide(@, 0, Math.max(1, @body.vel.y), me.collision.types.WORLD_SHAPE, -8)
 
     handleJump: () ->
+        if --@jumpTimer <= 0
+            @controllingJump = false
         if @controllingJump and @body.jumping and @body.vel.y < 0
-            @body.vel.y -= 1
+            @body.vel.y -= 2.5
 
     jump: (amount, forceJump = false) ->
-        if forceJump or @hasFloorBelow()
+        if forceJump or (!@body.jumping and @hasFloorBelow())
             @body.vel.y = amount
             # set the jumping flag
             @body.jumping = true
-        @controllingJump = not forceJump
+            @jumpTimer = 5
+            @controllingJump = not forceJump
     tryMakeBlock: (dx) ->
         [x, y] = [@getRx(), @getRy()]
         x += dx
@@ -252,7 +257,7 @@ game.PlayerEntity = game.ActorBase.extend {
         if jumpReleased
             @controllingJump = false
         if me.input.isKeyPressed('jump') 
-            @jump(-5)
+            @jump(-4)
         @handleJump()
         jumpReleased = false
         @baseUpdate(dt)
@@ -266,7 +271,7 @@ game.PlayerEntity = game.ActorBase.extend {
                 if response.overlapV.y > 0 or (other.pos.y > @pos.y + 8)
                     other.die()
                     if !@body.jumping
-                        @jump(-8, true)
+                        @jump(-15, true)
                         # play some audio
                         me.audio.play 'stomp'
                 else if (other instanceof game.Bullet) and (response.overlapV.y < 0 or (other.pos.y + 24 < @pos.y))
