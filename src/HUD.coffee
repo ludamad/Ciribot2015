@@ -58,7 +58,7 @@ game.HUD.ScoreItem = me.Renderable.extend(
         _alpha = renderer.globalAlpha()
         renderer.setGlobalAlpha(0.7)
         Y -= 260
-        @font.draw(renderer, "GOLD #{game.data.coins}", X+150, Y-100+96)
+        @font.draw(renderer, "GOLD #{game.data.coins}", X+200, Y-100+96)
         i = 0
         @fontW.draw(renderer, "#{health}%", X+120, Y-40)
 

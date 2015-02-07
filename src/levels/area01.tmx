@@ -390,12 +390,6 @@
     <property name="spritewidth" value="32"/>
    </properties>
   </object>
-  <object name="HealthPowerup" x="1184" y="416" width="32" height="32">
-   <properties>
-    <property name="image" value="spinning_coin_gold"/>
-    <property name="spritewidth" value="32"/>
-   </properties>
-  </object>
   <object name="HealthPowerup" x="2080" y="1504" width="32" height="32">
    <properties>
     <property name="image" value="spinning_coin_gold"/>
@@ -431,6 +425,52 @@
    <properties>
     <property name="id" value="hopit2"/>
     <property name="next_id" value="hopit1"/>
+   </properties>
+  </object>
+  <object name="Coin" x="1568" y="192" width="32" height="32">
+   <properties>
+    <property name="image" value="spinning_coin_gold"/>
+    <property name="spritewidth" value="32"/>
+   </properties>
+  </object>
+  <object name="Coin" x="1600" y="192" width="32" height="32">
+   <properties>
+    <property name="image" value="spinning_coin_gold"/>
+    <property name="spritewidth" value="32"/>
+   </properties>
+  </object>
+  <object name="Coin" x="1888" y="128" width="32" height="32">
+   <properties>
+    <property name="image" value="spinning_coin_gold"/>
+    <property name="spritewidth" value="32"/>
+   </properties>
+  </object>
+  <object name="Coin" x="2112" y="96" width="32" height="32">
+   <properties>
+    <property name="image" value="spinning_coin_gold"/>
+    <property name="spritewidth" value="32"/>
+   </properties>
+  </object>
+  <object name="Coin" x="2080" y="352" width="32" height="32">
+   <properties>
+    <property name="image" value="spinning_coin_gold"/>
+    <property name="spritewidth" value="32"/>
+   </properties>
+  </object>
+  <object name="HealthPowerup" x="1216" y="416" width="32" height="32">
+   <properties>
+    <property name="image" value="spinning_coin_gold"/>
+    <property name="spritewidth" value="32"/>
+   </properties>
+  </object>
+  <object name="MonsterShooter" x="1088" y="96" width="32" height="32">
+   <properties>
+    <property name="facing" value="left"/>
+   </properties>
+  </object>
+  <object name="MonsterShooter" x="1088" y="64" width="32" height="32">
+   <properties>
+    <property name="facing" value="left"/>
    </properties>
   </object>
  </objectgroup>

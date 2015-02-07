@@ -24,6 +24,7 @@ me.game.update = (time) ->
     if shouldReset
         me.game.reset()
         me.audio.stopTrack()
+        game.data.steps = 0
         me.state.change(me.state.MENU)
         shouldReset = false
         return
@@ -234,7 +235,7 @@ game.PlayerEntity = game.ActorBase.extend {
             return true
         return false
     update: (dt) ->
-        if @pos.y > me.game.world.height + 32
+        if me.input.isKeyPressed('restart') or @pos.y > me.game.world.height + 32
             shouldReset = true
             return
         if @firstUpdate 
@@ -602,19 +603,16 @@ game.Portal = me.Entity.extend {
 ###
 
 game.HealthPowerup = me.CollectableEntity.extend {
-    init: (x, y) ->
-        settings = {
-            image: 'ciribot_health'
-            width: 32, height: 32
-            speed: 6
-        }
-        height = settings.height
+    init: (x, y, S) ->
+        S.image = 'ciribot_health'
+        S.spritewidth = 32
+        S.spriteheight = 32
         # call the parent constructor
-        @_super(me.CollectableEntity, 'init', [x, y, settings])
+        @_super(me.CollectableEntity, 'init', [x, y, S])
         @body.setCollisionMask(me.collision.types.PLAYER_OBJECT)
 
     onCollision: (response, other) ->
-        if other.health == 100
+        if other.health >= 100
             return false
         # do something when collide
         me.audio.play 'cling'
@@ -624,7 +622,7 @@ game.HealthPowerup = me.CollectableEntity.extend {
         # make sure it cannot be collected "again"
         @body.setCollisionMask(me.collision.types.NO_OBJECT)
         # remove it
-        me.game.world.removeChild(this)
+        me.game.world.removeChild(@)
         return false
 }
 
