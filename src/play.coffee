@@ -2,7 +2,7 @@ window.CURRENT_LEVEL = 'area01'
 game.PlayScreen = me.ScreenObject.extend {
     onResetEvent: ->
         # play the audio track
-        #me.audio.playTrack 'ciribot_theme'
+        me.audio.playTrack 'ciribot_theme'
         # load a level
         me.levelDirector.loadLevel window.CURRENT_LEVEL
         chainX = 0 ; chainY = 0
