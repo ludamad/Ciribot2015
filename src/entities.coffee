@@ -91,6 +91,14 @@ game.PlayerBlock = me.Entity.extend {
             if not testRect(pos.x+(rX-x), pos.y+(rY-y), 32, 32, me.collision.types.ALL_OBJECT, @) # Can be?
                 @pos.x = rX; @pos.y = rY
                 @updateBounds()
+    takeDamage: (amount, frames) ->
+        if @invincibleFrames <= 0
+            @health = Math.max(0, @health - amount)
+            if @health <= 0
+                shouldReset = true
+            me.audio.play('stomp')
+            @renderable.flicker(200)
+            @invincibleFrames = frames
 
     draw: (renderer) ->
         [x, y] = [@getRx(), @getRy()]
@@ -121,6 +129,7 @@ game.ActorBase = me.Entity.extend {
         @alwaysUpdate = true
         @body.setMaxVelocity(MAX_SPEED, 30)
         @onPlatform = null
+        @health = 100
     getRx: () ->
         {pos, width} = @getBounds()
         return Math.round(0.5 + pos.x + @anchorPoint.x * (width - @renderable.width))
@@ -182,18 +191,8 @@ game.PlayerEntity = game.ActorBase.extend {
         @renderable.setCurrentAnimation('stand')
         @firstUpdate = true
         @jumpTimer = 0
-        @health = 100
         @invincibleFrames = 10
         @baseInit()
-    takeDamage: (amount, frames) ->
-        if @invincibleFrames <= 0
-            @health = Math.max(0, @health - amount)
-            if @health <= 0
-                shouldReset = true
-            me.audio.play('stomp')
-            @renderable.flicker(200)
-            @invincibleFrames = frames
-
     giveInvincibileFrames: (n) ->
         @invincibleFrames = Math.max(@invincibleFrames, n)
 
