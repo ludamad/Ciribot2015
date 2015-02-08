@@ -298,7 +298,7 @@ game.PlayerEntity = game.ActorBase.extend {
                         @jump(-12, true)
                         me.audio.play('jump')
                 else if (other instanceof game.Bullet) and (response.overlapV.y < 0 or (other.pos.y + 24 < @pos.y))
-                    return true
+                    return false
                 else 
                     @takeDamage(20, 10)
                 return false
@@ -380,7 +380,7 @@ game.MonsterShooter = me.Entity.extend {
         @body.collisionType = me.collision.types.WORLD_SHAPE
         @body.addShape(new me.Rect(0, 0, settings.width, settings.height))
         @body.setMaxVelocity(0,0)
-        @timeTilSpawn = 50
+        @timeTilSpawn = 50 + Math.random(10)
         @nextKind = Math.min(3, ~~(Math.random() *4))
         @renderable.flipX(@facing)
     update: (dt) ->
@@ -395,7 +395,7 @@ game.MonsterShooter = me.Entity.extend {
             else
                 me.game.world.addChild(new game.OldCiriEnemy(x + dx, y, @nextKind, vx))
                 @nextKind = (@nextKind + 1) % 4
-            @timeTilSpawn = 50
+            @timeTilSpawn = 50 + Math.random(10)
 }
 
 game.BulletShooter = game.MonsterShooter.extend {
@@ -409,7 +409,7 @@ game.BulletShooter = game.MonsterShooter.extend {
             if wouldCollide(@, dx*1.25, 0, T.PLAYER_OBJECT, 16, 16)
                 return
             me.game.world.addChild(new game.Bullet(x + dx, y, vx))
-            @timeTilSpawn = 50
+            @timeTilSpawn = 50 + Math.random(10)
 }
 
 game.DeadMonster = me.Entity.extend {
