@@ -347,10 +347,7 @@ game.MovingPlatform = me.Entity.extend {
         @goLeft = (settings.facing == "left")
     update: (dt) ->
         if @body.vel.x == 0
-            if Math.random() > .5 
-                @body.vel.x = -@speed
-            else
-                @body.vel.x = @speed
+            @body.vel.x = -@speed
         if wouldCollide(@, @body.vel.x, 0, solidMask)
             if not wouldCollide(@, -@body.vel.x, 0, solidMask)
                 @body.vel.x *= -1
@@ -383,7 +380,7 @@ game.MonsterShooter = me.Entity.extend {
         @body.collisionType = me.collision.types.WORLD_SHAPE
         @body.addShape(new me.Rect(0, 0, settings.width, settings.height))
         @body.setMaxVelocity(0,0)
-        @timeTilSpawn = 25 + ~~(Math.random()*50)
+        @timeTilSpawn = 50
         @nextKind = Math.min(3, ~~(Math.random() *4))
         @renderable.flipX(@facing)
     update: (dt) ->
@@ -398,7 +395,7 @@ game.MonsterShooter = me.Entity.extend {
             else
                 me.game.world.addChild(new game.OldCiriEnemy(x + dx, y, @nextKind, vx))
                 @nextKind = (@nextKind + 1) % 4
-            @timeTilSpawn = 25 + ~~(Math.random()*50)
+            @timeTilSpawn = 50
 }
 
 game.BulletShooter = game.MonsterShooter.extend {
@@ -412,7 +409,7 @@ game.BulletShooter = game.MonsterShooter.extend {
             if wouldCollide(@, dx*1.25, 0, T.PLAYER_OBJECT, 16, 16)
                 return
             me.game.world.addChild(new game.Bullet(x + dx, y, vx))
-            @timeTilSpawn = 25 + ~~(Math.random()*50)
+            @timeTilSpawn = 50
 }
 
 game.DeadMonster = me.Entity.extend {
@@ -468,10 +465,7 @@ game.Monster = game.ActorBase.extend {
             me.game.world.removeChild(@)
             return
         if @body.vel.x == 0
-            if Math.random() > .5 
-                @body.vel.x = -@settings.speed
-            else
-                @body.vel.x = @settings.speed
+            @body.vel.x = -@settings.speed
         @renderable.flipX(@body.vel.x < 0)
         if wouldCollide(@, @body.vel.x, 0, me.collision.types.WORLD_SHAPE)
             if not wouldCollide(@, -@body.vel.x, 0, me.collision.types.WORLD_SHAPE)
@@ -494,7 +488,7 @@ game.PotFrog = game.Monster.extend {
         settings = {
             image: 'potfrog'
             width: 30, height: 30
-            speed: 6
+            speed: 8
             spritewidth: 32, spriteheight: 48
         }
         @_super(game.Monster, 'init', [x, y, settings])
