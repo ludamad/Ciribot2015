@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.0" orientation="orthogonal" width="100" height="100" tilewidth="32" tileheight="32">
+<map version="1.0" orientation="orthogonal" renderorder="right-down" width="100" height="100" tilewidth="32" tileheight="32">
  <tileset firstgid="1" name="ciribot_tiles" tilewidth="32" tileheight="32">
   <image source="../sprites/ciribot_tiles.png" width="160" height="160"/>
  </tileset>
@@ -29,6 +29,12 @@
   <object name="mainPlayer" x="160" y="288" width="32" height="32">
    <properties>
     <property name="image" value="ciribot"/>
+    <property name="spritewidth" value="32"/>
+   </properties>
+  </object>
+  <object name="Coin" x="312" y="240" width="32" height="32">
+   <properties>
+    <property name="image" value="spinning_coin_gold"/>
     <property name="spritewidth" value="32"/>
    </properties>
   </object>
