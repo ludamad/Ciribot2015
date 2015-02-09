@@ -91,11 +91,12 @@ game.PlayerBlock = me.Entity.extend {
         [@pos.x, @pos.y] = [x, y]
         @updateBounds()
     resolveLocationAndValidity: () ->
+        @framesToLive = BLOCK_FRAMES_TO_LIVE
         @setXY(_rnd(@tryX, 8), _rnd(@tryY, 32))
         if not wouldCollide(@, 0,0, T.WORLD_SHAPE) 
             if wouldCollide(@, 0,0, solidMask - T.WORLD_SHAPE) 
                 @setXY(@tryX, @tryY)
-                # Well snapped is bad. But, is the 'natural', unsnapped location OK?
+                # Well snapped is bad here. But, is the 'natural', unsnapped location OK?
                 if wouldCollide(@, 0,0, solidMask) # If true then nope
                     @setXY(_rnd(@tryX, 8), _rnd(@tryY, 32))
         @valid = not wouldCollide(@, 0,0, solidMask)
@@ -104,22 +105,24 @@ game.PlayerBlock = me.Entity.extend {
 
     # When holding down the 'block' button, can move it further up to a certain amount
     tryMoveFurther: () ->
-        if not @focused then return
+        if @travelsLeft-- <= 0 
+            @focused = false
+            return
         @tryX += @dir * 8
         valid = @resolveLocationAndValidity()
         if not valid
             @tryX -= @dir * 8
             @resolveLocationAndValidity()
-        else
-            if --@travelsLeft <= 0
-                @focused = false
+            @travelsLeft++
 
     update: (dt) ->
         {x, y} = @pos
         {pos} = @getBounds()
-        if testRect(pos.x - 8, pos.y,48,32, me.collision.types.ENEMY_OBJECT, (o) -> not (o instanceof game.Bullet))
+        if testRect(pos.x - 4, pos.y - 4,40,40, me.collision.types.ENEMY_OBJECT, (o) -> not (o instanceof game.Bullet))
             @framesToLive = 0
         if --@framesToLive < 0
+            if me.game.player.activeBlock == @
+                me.game.player.activeBlock = null
             me.game.world.removeChild(@)
             return
         # Snap to grid if need be and can be:
@@ -274,7 +277,6 @@ game.PlayerEntity = game.ActorBase.extend {
             @firstUpdate = false
         if me.input.isKeyPressed('block') and @hasFloorBelow()
             [x, y] = [@getRx(), @getRy()]
-            y -= 4
             dir = (if @renderable.lastflipX then -1 else 1)
             @activeBlock = new game.PlayerBlock(x, y, dir)
             me.game.world.addChild(@activeBlock)
