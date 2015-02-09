@@ -34,7 +34,7 @@ game.HUD.ScoreItem = me.Renderable.extend(
         @fontW = new me.BitmapFont('32x32_font_white', 32)
         @fontW.set('right')
         @ciriSprite = new me.Sprite(0, 0, me.loader.getImage('ciribot'), 32, 43)
-        @warningSprite = new me.Sprite(0, 0, me.loader.getImage('bottomless_warning'), 32, 43)
+        @warningSprite = new me.Sprite(0, 0, me.loader.getImage('bottomless_warning'))
     update: () ->
         return true
     drawAt: (renderer, spr, x,y) ->
