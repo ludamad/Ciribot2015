@@ -13,10 +13,13 @@ T = me.collision.types
 solidMask = T.WORLD_SHAPE | T.PLAYER_OBJECT | T.ENEMY_OBJECT
 
 jumpReleased = false
+blockReleased = false
 
 me.event.subscribe me.event.KEYUP, (action, keyCode) ->
     if keyCode == me.input.KEY.W or keyCode == me.input.KEY.UP
         jumpReleased = true
+    else if keyCode == me.input.KEY.CTRL or keyCode == me.input.KEY.SPACE
+        blockReleased = true
 
 shouldReset = false
 wrapped = me.game.update
@@ -62,21 +65,55 @@ game.BlockClearer = game.InvisibleBlock.extend {
         return false
 }
 
+# 32-base defaulted rounding utility:
+_rnd = (n, b = 32) -> Math.round(n/b)*b
+
 game.PlayerBlock = me.Entity.extend {
-    init: (x, y) ->
+    init: (x, y, @dir) ->
         settings = {
-            width: 32, height: 32
+            width: 30, height: 30
             spritewidth: 32, spriteheight: 40
             image: 'ciriblock'
         }
+        x += 32*@dir
         @_super(me.Entity, 'init', [x, y, settings])
         @body.collisionType = me.collision.types.WORLD_SHAPE
         @body.addShape(new me.Rect(0, 0, settings.width, settings.height))
-        # @topSprite = new me.Sprite(0, 0, me.loader.getImage('ciriblock_top'))
         @alwaysUpdate = true
         @renderable.translate(0,-4)
         @framesToLive = BLOCK_FRAMES_TO_LIVE
         @body.setMaxVelocity(0,0)
+        @travelsLeft = 64/8
+        @focused = true
+        {x: @tryX, y: @tryY} = @pos
+        @resolveLocationAndValidity()
+    setXY: (x, y) -> 
+        [@pos.x, @pos.y] = [x, y]
+        @updateBounds()
+    resolveLocationAndValidity: () ->
+        @setXY(_rnd(@tryX, 8), _rnd(@tryY, 32))
+        if not wouldCollide(@, 0,0, T.WORLD_SHAPE) 
+            if wouldCollide(@, 0,0, solidMask - T.WORLD_SHAPE) 
+                @setXY(@tryX, @tryY)
+                # Well snapped is bad. But, is the 'natural', unsnapped location OK?
+                if wouldCollide(@, 0,0, solidMask) # If true then nope
+                    @setXY(_rnd(@tryX, 8), _rnd(@tryY, 32))
+        @valid = not wouldCollide(@, 0,0, solidMask)
+        @body.setCollisionMask(if @valid then T.ALL_OBJECT else T.NO_OBJECT)
+        return @valid
+
+    # When holding down the 'block' button, can move it further up to a certain amount
+    tryMoveFurther: () ->
+        if not @focused then return
+        @tryX += @dir * 8
+        valid = @resolveLocationAndValidity()
+        if not valid
+            @tryX -= @dir * 8
+            @resolveLocationAndValidity()
+        else
+            if --@travelsLeft <= 0
+                @focused = false
+
     update: (dt) ->
         {x, y} = @pos
         {pos} = @getBounds()
@@ -86,15 +123,20 @@ game.PlayerBlock = me.Entity.extend {
             me.game.world.removeChild(@)
             return
         # Snap to grid if need be and can be:
-        rX = 32*Math.round(x/32) ; rY = 32*Math.round(y/32)
+        rX = _rnd(x, 8) ; rY = _rnd(y)
         if rX != x or rY != y # Need be?
             if not testRect(pos.x+(rX-x), pos.y+(rY-y), 32, 32, me.collision.types.ALL_OBJECT, @) # Can be?
                 @pos.x = rX; @pos.y = rY
                 @updateBounds()
     draw: (renderer) ->
         [x, y] = [@getRx(), @getRy()]
+        if @focused
+            renderer.setGlobalAlpha(0.7) 
+        if not @valid
+            renderer.setGlobalAlpha(0.25) 
         renderer.translate(x, y)
         @renderable.draw(renderer)
+        renderer.setGlobalAlpha(1.0) 
         renderer.translate(-x, -y)
     getRx: () ->
         {pos, width} = @getBounds()
@@ -177,7 +219,7 @@ game.ActorBase = me.Entity.extend {
 game.PlayerEntity = game.ActorBase.extend {
     init: (x, y, settings) ->
         settings.spritewidth = 33 ; settings.spriteheight = 43
-        settings.width = 30       ; settings.height = 30
+        settings.width = 28       ; settings.height = 30
         settings.z = 0
         me.game.player = @
         @collided = false
@@ -193,6 +235,7 @@ game.PlayerEntity = game.ActorBase.extend {
         @renderable.addAnimation('stand', [0])
         @renderable.setCurrentAnimation('stand')
         @firstUpdate = true
+        @activeBlock = null
         @jumpTimer = 0
         @baseInit()
     die: () ->
@@ -221,20 +264,6 @@ game.PlayerEntity = game.ActorBase.extend {
             @body.jumping = true
             @jumpTimer = 5
             @controllingJump = not forceJump
-    tryMakeBlock: (dx) ->
-        [x, y] = [@getRx(), @getRy()]
-        x += dx
-        block = new game.PlayerBlock(Math.round(x/32)*32, Math.round(y/32)*32)
-        _bounds = block.getBounds()
-        if not testRect(_bounds.pos.x, _bounds.pos.y, 32, 32, solidMask)
-            me.game.world.addChild(block)
-            return true
-        block.pos.x = x; block.pos.y = y
-        block.updateBounds()
-        if not testRect(_bounds.pos.x, _bounds.pos.y, 32, 32, solidMask)
-            me.game.world.addChild(block)
-            return true
-        return false
     update: (dt) ->
         if me.input.isKeyPressed('restart') or @pos.y > me.game.world.height + 32
             shouldReset = true
@@ -245,11 +274,11 @@ game.PlayerEntity = game.ActorBase.extend {
             @firstUpdate = false
         if me.input.isKeyPressed('block') and @hasFloorBelow()
             [x, y] = [@getRx(), @getRy()]
-            y += 4
-            dx = 32
-            if @renderable.lastflipX 
-                dx = -32
-            @tryMakeBlock(2*dx) or @tryMakeBlock(dx)
+            y -= 4
+            dir = (if @renderable.lastflipX then -1 else 1)
+            @activeBlock = new game.PlayerBlock(x, y, dir)
+            me.game.world.addChild(@activeBlock)
+
         if me.input.isKeyPressed('clear')
             new game.BlockClearer(@) # Constructor handles everything necessary
 
@@ -280,10 +309,21 @@ game.PlayerEntity = game.ActorBase.extend {
         # # Jump on every 'edge'
         if jumpReleased
             @controllingJump = false
+        if blockReleased and @activeBlock?
+            if not @activeBlock.valid
+                me.game.world.removeChild(@activeBlock)
+            else
+                @activeBlock.focused = false
+            @activeBlock = null
+        if @activeBlock? 
+            # If this is true, we must be holding down and thus want to move the block further
+            @activeBlock.tryMoveFurther()
+
         if me.input.isKeyPressed('jump') 
             @jump(-6)
         @handleJump()
         jumpReleased = false
+        blockReleased = false
         @baseUpdate(dt)
 
     onCollision: (response, other) ->
@@ -295,12 +335,12 @@ game.PlayerEntity = game.ActorBase.extend {
                 if response.overlapV.y > 0 or (other.pos.y > @pos.y + 8)
                     other.die()
                     if !@body.jumping
-                        @jump(-12, true)
+                        @jump(-16, true)
                         me.audio.play('jump')
                 else if (other instanceof game.Bullet) and (response.overlapV.y < 0 or (other.pos.y + 24 < @pos.y))
-                    return true
+                    return false
                 else 
-                    @takeDamage(20, 10)
+                    @takeDamage(30, 10)
                 return false
             else
                 # Do not respond to other objects (e.g. coins)
@@ -317,7 +357,7 @@ game.Coin = me.CollectableEntity.extend {
     init: (x, y, settings) ->
         # call the parent constructor
         @_super(me.CollectableEntity, 'init', [x, y, settings])
-        @body.setCollisionMask(me.collision.types.PLAYER_OBJECT)
+        @body.setCollisionMask(T.PLAYER_OBJECT)
     onCollision: (response, other) ->
         # do something when collide
         me.audio.play 'cling'
@@ -325,7 +365,7 @@ game.Coin = me.CollectableEntity.extend {
         game.data.coins++
         game.data.score += 250
         # make sure it cannot be collected "again"
-        @body.setCollisionMask(me.collision.types.NO_OBJECT)
+        @body.setCollisionMask(T.NO_OBJECT)
         # remove it
         me.game.world.removeChild(this)
         return false
@@ -380,7 +420,7 @@ game.MonsterShooter = me.Entity.extend {
         @body.collisionType = me.collision.types.WORLD_SHAPE
         @body.addShape(new me.Rect(0, 0, settings.width, settings.height))
         @body.setMaxVelocity(0,0)
-        @timeTilSpawn = 50
+        @timeTilSpawn = 50 + Math.random() * 10
         @nextKind = Math.min(3, ~~(Math.random() *4))
         @renderable.flipX(@facing)
     update: (dt) ->
@@ -395,7 +435,7 @@ game.MonsterShooter = me.Entity.extend {
             else
                 me.game.world.addChild(new game.OldCiriEnemy(x + dx, y, @nextKind, vx))
                 @nextKind = (@nextKind + 1) % 4
-            @timeTilSpawn = 50
+            @timeTilSpawn = 50 + Math.random()* 10
 }
 
 game.BulletShooter = game.MonsterShooter.extend {
@@ -409,7 +449,7 @@ game.BulletShooter = game.MonsterShooter.extend {
             if wouldCollide(@, dx*1.25, 0, T.PLAYER_OBJECT, 16, 16)
                 return
             me.game.world.addChild(new game.Bullet(x + dx, y, vx))
-            @timeTilSpawn = 50
+            @timeTilSpawn = 50 + Math.random() * 10
 }
 
 game.DeadMonster = me.Entity.extend {
@@ -470,6 +510,8 @@ game.Monster = game.ActorBase.extend {
         if wouldCollide(@, @body.vel.x, 0, me.collision.types.WORLD_SHAPE)
             if not wouldCollide(@, -@body.vel.x, 0, me.collision.types.WORLD_SHAPE)
                 @body.vel.x *= -1
+        # Make sure the speed is always at max:
+        @body.vel.x = (if @body.vel.x < 0 then -@settings.speed else @settings.speed)
         @baseUpdate(dt)
     onCollision: (response, other) ->
         @baseOnCollision(response, other, false)
@@ -487,7 +529,7 @@ game.PotFrog = game.Monster.extend {
     init: (x, y, vx) ->
         settings = {
             image: 'potfrog'
-            width: 30, height: 30
+            width: 28, height: 30
             speed: 8
             spritewidth: 32, spriteheight: 48
         }
@@ -500,7 +542,7 @@ game.Chicken = game.Monster.extend {
     init: (x, y, vx) ->
         settings = {
             image: 'monsters'
-            width: 30, height: 30
+            width: 28, height: 30
             frame: 1 # For dead monster
             spritewidth: 32, spriteheight: 32
         }
@@ -514,7 +556,7 @@ game.OldCiriEnemy = game.Monster.extend {
     init: (x, y, n, vx) ->
         settings = {
             image: 'oldcirienemies'
-            width: 32, height: 32
+            width: 28, height: 30
             frame: n # For dead monster
             speed: 3
             spritewidth: 32, spriteheight: 32
@@ -529,7 +571,7 @@ game.Bullet = game.Monster.extend {
     init: (x, y, vx) ->
         settings = {
             image: 'bullet'
-            width: 30, height: 30
+            width: 28, height: 30
             frame: 0 # For dead monster
             speed: 3
             # flipY: false # For dead monster

@@ -2,6 +2,8 @@
 # a HUD container and child items
 ###
 
+T = me.collision.types
+
 game.HUD = game.HUD or {}
 game.HUD.Container = me.Container.extend(init: ->
     # call the constructor
@@ -32,14 +34,35 @@ game.HUD.ScoreItem = me.Renderable.extend(
         @fontW = new me.BitmapFont('32x32_font_white', 32)
         @fontW.set('right')
         @ciriSprite = new me.Sprite(0, 0, me.loader.getImage('ciribot'), 32, 43)
+        @warningSprite = new me.Sprite(0, 0, me.loader.getImage('bottomless_warning'), 32, 43)
     update: () ->
         return true
+    drawAt: (renderer, spr, x,y) ->
+        renderer.translate(x,y)
+        spr.draw(renderer)
+        renderer.translate(-x,-y)
+
+    drawWarnings: (renderer) ->
+        {height} = me.game.world
+        {x,y} = me.game.viewport.pos
+        {width: w, height: h} = me.game.viewport
+        finalX = x + w
+        xx = Math.floor(x/32)*32 - 32
+        yy = y + h - 32
+        renderer.setGlobalAlpha(0.5)
+        while xx < finalX
+            xx += 32
+            {x: playerX, y: playerY} = me.game.player.pos
+            if not testRect(xx, playerY, 30, height - playerY, T.WORLD_SHAPE)
+                @drawAt(renderer, @warningSprite, xx - x, yy - y)
+        renderer.setGlobalAlpha(1.0)
+
     draw: (renderer) ->
+        @drawWarnings(renderer)
         {x, y} = @pos
         {health} = me.game.player
         X = x+60 ; Y = y+60
         W = 25*5 ; H = 32
-        renderer.setColor('white')
         renderer.setColor('black')
         _alpha = renderer.globalAlpha()
 
@@ -48,9 +71,7 @@ game.HUD.ScoreItem = me.Renderable.extend(
         @fontW.draw(renderer, "#{health}%", X+120, Y-40)
 
         renderer.setGlobalAlpha(health/100)
-        renderer.translate(X - 40, Y - 50)
-        @ciriSprite.draw(renderer)
-        renderer.translate(-X + 40, -Y + 50)
+        @drawAt(renderer, @ciriSprite, X - 40, Y - 50)
 
         renderer.setGlobalAlpha(0.7)
         time = Math.floor(game.data.steps / 30) # fps == 30

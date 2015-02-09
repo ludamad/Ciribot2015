@@ -37,6 +37,7 @@ defineImages [
     "area01_bkg1"
     "area01_level_tiles"
     "bounce_spring"
+    "bottomless_warning"
     "bullet"
     "bullet_explosion"
     "bullet_shooter"
