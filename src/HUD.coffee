@@ -54,7 +54,7 @@ game.HUD.ScoreItem = me.Renderable.extend(
             xx += 32
             {x: playerX, y: playerY} = me.game.player.pos
             if not testRect(xx, playerY, 30, height - playerY, T.WORLD_SHAPE)
-                @drawAt(renderer, @warningSprite, xx - x, yy - y)
+                @drawAt(renderer, @warningSprite, xx - x, yy - y + 16)
         renderer.setGlobalAlpha(1.0)
 
     draw: (renderer) ->
@@ -67,7 +67,7 @@ game.HUD.ScoreItem = me.Renderable.extend(
         _alpha = renderer.globalAlpha()
 
         renderer.setGlobalAlpha(0.7)
-        @font.draw(renderer, "GOLD #{game.data.coins}", X+200, Y-100+96)
+        # @font.draw(renderer, "GOLD #{game.data.coins}", X+200, Y-100+96)
         @fontW.draw(renderer, "#{health}%", X+120, Y-40)
 
         renderer.setGlobalAlpha(health/100)
