@@ -295,12 +295,12 @@ game.PlayerEntity = game.ActorBase.extend {
                 if response.overlapV.y > 0 or (other.pos.y > @pos.y + 8)
                     other.die()
                     if !@body.jumping
-                        @jump(-12, true)
+                        @jump(-16, true)
                         me.audio.play('jump')
                 else if (other instanceof game.Bullet) and (response.overlapV.y < 0 or (other.pos.y + 24 < @pos.y))
                     return false
                 else 
-                    @takeDamage(20, 10)
+                    @takeDamage(30, 10)
                 return false
             else
                 # Do not respond to other objects (e.g. coins)
@@ -380,7 +380,7 @@ game.MonsterShooter = me.Entity.extend {
         @body.collisionType = me.collision.types.WORLD_SHAPE
         @body.addShape(new me.Rect(0, 0, settings.width, settings.height))
         @body.setMaxVelocity(0,0)
-        @timeTilSpawn = 50 + Math.random(10)
+        @timeTilSpawn = 50 + Math.random() * 10
         @nextKind = Math.min(3, ~~(Math.random() *4))
         @renderable.flipX(@facing)
     update: (dt) ->
@@ -395,7 +395,7 @@ game.MonsterShooter = me.Entity.extend {
             else
                 me.game.world.addChild(new game.OldCiriEnemy(x + dx, y, @nextKind, vx))
                 @nextKind = (@nextKind + 1) % 4
-            @timeTilSpawn = 50 + Math.random(10)
+            @timeTilSpawn = 50 + Math.random()* 10
 }
 
 game.BulletShooter = game.MonsterShooter.extend {
@@ -409,7 +409,7 @@ game.BulletShooter = game.MonsterShooter.extend {
             if wouldCollide(@, dx*1.25, 0, T.PLAYER_OBJECT, 16, 16)
                 return
             me.game.world.addChild(new game.Bullet(x + dx, y, vx))
-            @timeTilSpawn = 50 + Math.random(10)
+            @timeTilSpawn = 50 + Math.random() * 10
 }
 
 game.DeadMonster = me.Entity.extend {
@@ -514,7 +514,7 @@ game.OldCiriEnemy = game.Monster.extend {
     init: (x, y, n, vx) ->
         settings = {
             image: 'oldcirienemies'
-            width: 32, height: 32
+            width: 30, height: 30
             frame: n # For dead monster
             speed: 3
             spritewidth: 32, spriteheight: 32
