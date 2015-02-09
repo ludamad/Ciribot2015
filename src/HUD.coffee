@@ -78,7 +78,7 @@ game.HUD.ScoreItem = me.Renderable.extend(
         minutes = Math.floor(time / 60)
         seconds = time - minutes * 60
         if seconds < 10 then seconds = "0" + seconds
-        @fontW.draw(renderer, "TIME #{minutes}:#{seconds}", X+550, y+15)
+        # @fontW.draw(renderer, "TIME #{minutes}:#{seconds}", X+550, y+15)
         
         renderer.setGlobalAlpha(_alpha)
 )
