@@ -4,3 +4,4 @@ src/*.js
 
 # project specific ignore
 node_modules/
+OldCiribotPlatformGame/
