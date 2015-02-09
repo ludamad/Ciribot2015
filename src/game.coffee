@@ -64,7 +64,7 @@ window.game = {
     loaded: () ->
         me.state.set(me.state.MENU, new game.TitleScreen())
         me.state.set(me.state.PLAY, new game.PlayScreen())
-        # add our player entity in the entity pool
+        # add our entity classes in the entity pool
         me.pool.register('mainPlayer', game.PlayerEntity)
         me.pool.register('Coin', game.Coin)
         me.pool.register('MonsterShooter', game.MonsterShooter)
@@ -73,7 +73,16 @@ window.game = {
         me.pool.register('SpringEntity', game.SpringEntity)
         me.pool.register('HealthPowerup', game.HealthPowerup)
         me.pool.register('MovingPlatform', game.MovingPlatform)
-        # enable the keyboard
+        me.pool.register('PotFrog', game.PotFrog)
+        me.pool.register('Chicken', game.Chicken)
+        me.pool.register('OldCiriEnemy', game.OldCiriEnemy)
+        me.pool.register('Bullet', game.Bullet)
+        me.pool.register('BlockClearer', game.BlockClearer)
+        me.pool.register('PlayerBlock', game.PlayerBlock)
+        me.pool.register('DeadMonster', game.DeadMonster)
+        me.pool.register('Animation', game.Animation)
+
+        # Keyboard bindings:
         me.input.bindKey(me.input.KEY.LEFT, 'left')
         me.input.bindKey(me.input.KEY.RIGHT, 'right')
         me.input.bindKey(me.input.KEY.A, 'left')

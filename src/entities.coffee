@@ -278,11 +278,11 @@ game.PlayerEntity = game.ActorBase.extend {
         if me.input.isKeyPressed('block') and @hasFloorBelow()
             [x, y] = [@getRx(), @getRy()]
             dir = (if @renderable.lastflipX then -1 else 1)
-            @activeBlock = new game.PlayerBlock(x, y, dir)
+            @activeBlock = me.pool.pull("PlayerBlock", x, y, dir)
             me.game.world.addChild(@activeBlock)
 
         if me.input.isKeyPressed('clear')
-            new game.BlockClearer(@) # Constructor handles everything necessary
+            me.pool.pull("BlockClearer", @) # Constructor handles everything necessary
 
         if me.input.isKeyPressed('left')
             # flip the sprite on horizontal axis
@@ -433,9 +433,9 @@ game.MonsterShooter = me.Entity.extend {
             if wouldCollide(@, dx*1.25, 0, T.PLAYER_OBJECT, 16, 16)
                 return
             if Math.random() < .1
-                me.game.world.addChild(new game.PotFrog(x + dx, y, vx))
+                me.game.world.addChild(me.pool.pull("PotFrog", x + dx, y, vx))
             else
-                me.game.world.addChild(new game.OldCiriEnemy(x + dx, y, @nextKind, vx))
+                me.game.world.addChild(me.pool.pull("OldCiriEnemy", x + dx, y, @nextKind, vx))
                 @nextKind = (@nextKind + 1) % 4
             @timeTilSpawn = 50 + Math.random()* 10
 }
@@ -450,7 +450,7 @@ game.BulletShooter = game.MonsterShooter.extend {
             vx = dx / 32 * 4
             if wouldCollide(@, dx*1.25, 0, T.PLAYER_OBJECT, 16, 16)
                 return
-            me.game.world.addChild(new game.Bullet(x + dx, y, vx))
+            me.game.world.addChild(me.pool.pull("Bullet", x + dx, y, vx))
             @timeTilSpawn = 50 + Math.random() * 10
 }
 
@@ -487,7 +487,7 @@ game.Monster = game.ActorBase.extend {
     die: () ->
         [x, y] = [@getRx(), @getRy()]
         @settings.flipX = @body.lastflipX
-        mon = new game.DeadMonster(x, y, @settings)
+        mon = me.pool.pull("DeadMonster", x, y, @settings)
         me.game.world.addChild(mon)
         @body.setCollisionMask(me.collision.types.NO_OBJECT)
         me.game.world.removeChild(@)
@@ -592,7 +592,7 @@ game.Bullet = game.Monster.extend {
                 width: 32, height: 32
                 spritewidth: 32, spriteheight: 32
             }
-            anim = new game.Animation(@pos.x, @pos.y, settings)
+            anim = me.pool.pull("Animation", @pos.x, @pos.y, settings)
             anim.renderable.addAnimation('stand', [0], 0)
             anim.renderable.setCurrentAnimation('stand')
             me.game.world.addChild(anim)
