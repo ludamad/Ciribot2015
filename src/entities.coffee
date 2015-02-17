@@ -18,7 +18,7 @@ blockReleased = false
 me.event.subscribe me.event.KEYUP, (action, keyCode) ->
     if keyCode == me.input.KEY.W or keyCode == me.input.KEY.UP
         jumpReleased = true
-    else if keyCode == me.input.KEY.CTRL or keyCode == me.input.KEY.SPACE
+    else if keyCode == me.input.KEY.CTRL or keyCode == me.input.KEY.SPACE or keyCode == me.input.KEY.V or keyCode == me.input.KEY.F
         blockReleased = true
 
 shouldReset = false
@@ -69,7 +69,7 @@ game.BlockClearer = game.InvisibleBlock.extend {
 _rnd = (n, b = 32) -> Math.round(n/b)*b
 
 game.PlayerBlock = me.Entity.extend {
-    init: (x, y, @dir) ->
+    init: (x, y, @dir, @travelsLeft) ->
         settings = {
             width: 30, height: 30
             spritewidth: 32, spriteheight: 40
@@ -83,7 +83,6 @@ game.PlayerBlock = me.Entity.extend {
         @renderable.translate(0,-4)
         @framesToLive = BLOCK_FRAMES_TO_LIVE
         @body.setMaxVelocity(0,0)
-        @travelsLeft = 64/8
         @focused = true
         {x: @tryX, y: @tryY} = @pos
         @resolveLocationAndValidity()
@@ -116,6 +115,11 @@ game.PlayerBlock = me.Entity.extend {
             @travelsLeft++
 
     update: (dt) ->
+        @focused = @focused and (me.game.player.activeBlock == @)
+        if not @focused and not @valid
+            me.game.world.removeChild(@)
+            return
+
         {x, y} = @pos
         {pos} = @getBounds()
         if testRect(pos.x - 4, pos.y - 4,40,40, me.collision.types.ENEMY_OBJECT, (o) -> not (o instanceof game.Bullet))
@@ -196,6 +200,7 @@ game.ActorBase = me.Entity.extend {
             b.pos.y += 2
         if @onPlatform?
             @body.vel.x += @onPlatform.body.vel.x
+        @body.vel.y = Math.min(16, @body.vel.y)
         @body.update(dt)
         if @onPlatform?
             @body.vel.x -= @onPlatform.body.vel.x
@@ -275,10 +280,14 @@ game.PlayerEntity = game.ActorBase.extend {
             @z = 1000000
             me.game.world.sort()
             @firstUpdate = false
-        if me.input.isKeyPressed('block') and @hasFloorBelow()
+        block2 = me.input.isKeyPressed('block2')
+        if (me.input.isKeyPressed('block') or block2) and @hasFloorBelow()
             [x, y] = [@getRx(), @getRy()]
             dir = (if @renderable.lastflipX then -1 else 1)
-            @activeBlock = me.pool.pull("PlayerBlock", x, y, dir)
+            steps = 8
+            if block2
+                y += 32 ; steps = 4
+            @activeBlock = me.pool.pull("PlayerBlock", x, y, dir, steps)
             me.game.world.addChild(@activeBlock)
 
         if me.input.isKeyPressed('clear')

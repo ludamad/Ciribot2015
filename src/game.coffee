@@ -92,8 +92,11 @@ window.game = {
         me.input.bindKey(me.input.KEY.S, 'down')
         me.input.bindKey(me.input.KEY.UP, 'jump', true)
         me.input.bindKey(me.input.KEY.W, 'jump', true)
+        me.input.bindKey(me.input.KEY.F, 'block', true)
+        me.input.bindKey(me.input.KEY.V, 'block2', true)
         me.input.bindKey(me.input.KEY.CTRL, 'block', true)
         me.input.bindKey(me.input.KEY.SPACE, 'block', true)
+        me.input.bindKey(me.input.KEY.SHIFT, 'modkey')
         me.input.bindKey(me.input.KEY.C, 'clear', true)
         # Start the game.
         me.state.change(me.state.MENU)

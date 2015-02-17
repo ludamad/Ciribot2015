@@ -35,6 +35,7 @@ defineImages [
     "32x32_font_white"
     "area01_bkg0"
     "area01_bkg1"
+    "bkg2"
     "area01_level_tiles"
     "bounce_spring"
     "bottomless_warning"
@@ -61,6 +62,7 @@ defineImages [
 defineLevels [
     'area01'
     'area02'
+    'area03'
 ]
 defineSounds [
     'ciribot_theme'
